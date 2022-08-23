@@ -70,7 +70,7 @@ export class SnapshotsView extends View {
     while (x < visibleArea.origin.x + visibleArea.size.width) {
       const snapshot = this._findClosestSnapshot(x);
       if (snapshot === null) {
-        // This shold never happen.
+        // This should never happen.
         break;
       }
 
@@ -85,7 +85,7 @@ export class SnapshotsView extends View {
         size: {width: scaledWidth, height: scaledHeight},
       };
 
-      // Lazily create and cache Image objects as we render a snapsho for the first time.
+      // Lazily create and cache Image objects as we render a snapshot for the first time.
       if (snapshot.image === null) {
         const img = (snapshot.image = new Image());
         img.onload = () => {
