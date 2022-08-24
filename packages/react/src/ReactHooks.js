@@ -204,9 +204,3 @@ export function useCacheRefresh(): <T>(?() => T, ?T) => void {
   // $FlowFixMe This is unstable, thus optional
   return dispatcher.useCacheRefresh();
 }
-
-export function useMemoCache(size: number): Array<any> {
-  const dispatcher = resolveDispatcher();
-  // $FlowFixMe This is unstable, thus optional
-  return dispatcher.useMemoCache(size);
-}

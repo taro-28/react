@@ -7,13 +7,13 @@
  * @flow
  */
 
-import type {ReactContext} from 'shared/ReactTypes';
+import type { ReactContext } from 'shared/ReactTypes';
 
-import {enableCache} from 'shared/ReactFeatureFlags';
-import {REACT_CONTEXT_TYPE} from 'shared/ReactSymbols';
+import { enableCache } from 'shared/ReactFeatureFlags';
+import { REACT_CONTEXT_TYPE } from 'shared/ReactSymbols';
 
-import {pushProvider, popProvider} from './ReactFiberNewContext.new';
 import * as Scheduler from 'scheduler';
+import { popProvider, pushProvider } from './ReactFiberNewContext.new';
 
 // In environments without AbortController (e.g. tests)
 // replace it with a lightweight shim that only has the features we use.
@@ -74,11 +74,6 @@ export const CacheContext: ReactContext<Cache> = enableCache
     }
   : (null: any);
 
-if (__DEV__ && enableCache) {
-  CacheContext._currentRenderer = null;
-  CacheContext._currentRenderer2 = null;
-}
-
 // Creates a new empty Cache instance with a ref-count of 0. The caller is responsible
 // for retaining the cache once it is in use (retainCache), and releasing the cache
 // once it is no longer needed (releaseCache).
@@ -99,14 +94,6 @@ export function retainCache(cache: Cache) {
   if (!enableCache) {
     return;
   }
-  if (__DEV__) {
-    if (cache.controller.signal.aborted) {
-      console.warn(
-        'A cache instance was retained after it was already freed. ' +
-          'This likely indicates a bug in React.',
-      );
-    }
-  }
   cache.refCount++;
 }
 
@@ -116,14 +103,6 @@ export function releaseCache(cache: Cache) {
     return;
   }
   cache.refCount--;
-  if (__DEV__) {
-    if (cache.refCount < 0) {
-      console.warn(
-        'A cache instance was released after it was already freed. ' +
-          'This likely indicates a bug in React.',
-      );
-    }
-  }
   if (cache.refCount === 0) {
     scheduleCallback(NormalPriority, () => {
       cache.controller.abort();

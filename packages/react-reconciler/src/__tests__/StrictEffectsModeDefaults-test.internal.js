@@ -153,8 +153,10 @@ describe('StrictEffectsMode defaults', () => {
           </>,
         );
 
-        expect(Scheduler).toFlushAndYield([
+        expect(Scheduler).toFlushAndYieldThrough([
           'useLayoutEffect mount "one"',
+        ]);
+        expect(Scheduler).toFlushAndYield([
           'useEffect mount "one"',
           'useLayoutEffect unmount "one"',
           'useEffect unmount "one"',
@@ -377,29 +379,6 @@ describe('StrictEffectsMode defaults', () => {
       });
 
       expect(Scheduler).toHaveYielded([]);
-    });
-
-    it('disconnects refs during double invoking', () => {
-      const onRefMock = jest.fn();
-      function App({text}) {
-        return (
-          <span
-            ref={ref => {
-              onRefMock(ref);
-            }}>
-            text
-          </span>
-        );
-      }
-
-      act(() => {
-        ReactNoop.render(<App text={'mount'} />);
-      });
-
-      expect(onRefMock.mock.calls.length).toBe(3);
-      expect(onRefMock.mock.calls[0][0]).not.toBeNull();
-      expect(onRefMock.mock.calls[1][0]).toBe(null);
-      expect(onRefMock.mock.calls[2][0]).not.toBeNull();
     });
 
     it('passes the right context to class component lifecycles', () => {

@@ -84,44 +84,33 @@
 // regardless of priority. Intermediate state may vary according to system
 // resources, but the final state is always the same.
 
-import type {Fiber, FiberRoot} from './ReactInternalTypes';
-import type {Lanes, Lane} from './ReactFiberLane.new';
+import type { Lane, Lanes } from './ReactFiberLane.new';
+import type { Fiber, FiberRoot } from './ReactInternalTypes';
 
 import {
-  NoLane,
+  Callback, DidCapture, ShouldCapture, Visibility
+} from './ReactFiberFlags';
+import {
+  intersectLanes, isSubsetOfLanes, isTransitionLane, markRootEntangled, mergeLanes, NoLane,
   NoLanes,
-  OffscreenLane,
-  isSubsetOfLanes,
-  mergeLanes,
-  removeLanes,
-  isTransitionLane,
-  intersectLanes,
-  markRootEntangled,
+  OffscreenLane, removeLanes
 } from './ReactFiberLane.new';
 import {
   enterDisallowedContextReadInDEV,
-  exitDisallowedContextReadInDEV,
+  exitDisallowedContextReadInDEV
 } from './ReactFiberNewContext.new';
-import {
-  Callback,
-  Visibility,
-  ShouldCapture,
-  DidCapture,
-} from './ReactFiberFlags';
 
-import {debugRenderPhaseSideEffectsForStrictMode} from 'shared/ReactFeatureFlags';
+import { debugRenderPhaseSideEffectsForStrictMode } from 'shared/ReactFeatureFlags';
 
-import {StrictLegacyMode} from './ReactTypeOfMode';
-import {
-  markSkippedUpdateLanes,
-  isUnsafeClassRenderPhaseUpdate,
-  getWorkInProgressRootRenderLanes,
-} from './ReactFiberWorkLoop.new';
 import {
   enqueueConcurrentClassUpdate,
-  unsafe_markUpdateLaneFromFiberToRoot,
+  unsafe_markUpdateLaneFromFiberToRoot
 } from './ReactFiberConcurrentUpdates.new';
-import {setIsStrictModeForDevtools} from './ReactFiberDevToolsHook.new';
+import { setIsStrictModeForDevtools } from './ReactFiberDevToolsHook.new';
+import {
+  getWorkInProgressRootRenderLanes, isUnsafeClassRenderPhaseUpdate
+} from './ReactFiberWorkLoop.new';
+import { StrictLegacyMode } from './ReactTypeOfMode';
 
 import assign from 'shared/assign';
 
@@ -233,21 +222,6 @@ export function enqueueUpdate<State>(
   }
 
   const sharedQueue: SharedQueue<State> = (updateQueue: any).shared;
-
-  if (__DEV__) {
-    if (
-      currentlyProcessingQueue === sharedQueue &&
-      !didWarnUpdateInsideUpdate
-    ) {
-      console.error(
-        'An update (setState, replaceState, or forceUpdate) was scheduled ' +
-          'from inside an update function. Update functions should be pure, ' +
-          'with zero side-effects. Consider using componentDidUpdate or a ' +
-          'callback.',
-      );
-      didWarnUpdateInsideUpdate = true;
-    }
-  }
 
   if (isUnsafeClassRenderPhaseUpdate(fiber)) {
     // This is an unsafe render phase update. Add directly to the update

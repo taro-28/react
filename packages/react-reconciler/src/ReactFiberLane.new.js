@@ -7,9 +7,9 @@
  * @flow
  */
 
-import type {FiberRoot} from './ReactInternalTypes';
-import type {Transition} from './ReactFiberTracingMarkerComponent.new';
-import type {ConcurrentUpdate} from './ReactFiberConcurrentUpdates.new';
+import type { ConcurrentUpdate } from './ReactFiberConcurrentUpdates.new';
+import type { Transition } from './ReactFiberTracingMarkerComponent.new';
+import type { FiberRoot } from './ReactInternalTypes';
 
 // TODO: Ideally these types would be opaque but that doesn't work well with
 // our reconciler fork infra, since these leak into non-reconciler packages.
@@ -19,14 +19,11 @@ export type Lane = number;
 export type LaneMap<T> = Array<T>;
 
 import {
-  enableSchedulingProfiler,
-  enableUpdaterTracking,
-  allowConcurrentByDefault,
-  enableTransitionTracing,
+  allowConcurrentByDefault, enableSchedulingProfiler, enableTransitionTracing, enableUpdaterTracking
 } from 'shared/ReactFeatureFlags';
-import {isDevToolsPresent} from './ReactFiberDevToolsHook.new';
-import {ConcurrentUpdatesByDefaultMode, NoMode} from './ReactTypeOfMode';
-import {clz32} from './clz32';
+import { clz32 } from './clz32';
+import { isDevToolsPresent } from './ReactFiberDevToolsHook.new';
+import { ConcurrentUpdatesByDefaultMode, NoMode } from './ReactTypeOfMode';
 
 // Lane values below should be kept in sync with getLabelForLane(), used by react-devtools-timeline.
 // If those values are changed that package should be rebuilt and redeployed.
@@ -175,11 +172,6 @@ function getHighestPriorityLanes(lanes: Lanes | Lane): Lanes {
     case OffscreenLane:
       return OffscreenLane;
     default:
-      if (__DEV__) {
-        console.error(
-          'Should have found matching lanes. This is a bug in React.',
-        );
-      }
       // This shouldn't be reachable, but as a fallback, return the entire bitmask.
       return lanes;
   }
@@ -378,11 +370,6 @@ function computeExpirationTime(lane: Lane, currentTime: number) {
       // Anything idle priority or lower should never expire.
       return NoTimestamp;
     default:
-      if (__DEV__) {
-        console.error(
-          'Should have found matching lanes. This is a bug in React.',
-        );
-      }
       return NoTimestamp;
   }
 }

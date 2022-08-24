@@ -55,7 +55,6 @@ import {
   useDeferredValue,
   useId,
   useCacheRefresh,
-  useMemoCache,
 } from './ReactHooks';
 import {
   createElementWithValidation,
@@ -128,7 +127,6 @@ export {
   getCacheForType as unstable_getCacheForType,
   useCacheRefresh as unstable_useCacheRefresh,
   REACT_CACHE_TYPE as unstable_Cache,
-  useMemoCache as unstable_useMemoCache,
   // enableScopeAPI
   REACT_SCOPE_TYPE as unstable_Scope,
   // enableTransitionTracing

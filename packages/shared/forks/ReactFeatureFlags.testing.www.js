@@ -40,7 +40,6 @@ export const warnAboutSpreadingKeyToJSX = false;
 export const enableSuspenseAvoidThisFallback = true;
 export const enableSuspenseAvoidThisFallbackFizz = false;
 export const enableCPUSuspense = true;
-export const enableUseMemoCacheHook = false;
 export const enableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay = true;
 export const enableClientRenderFallbackOnTextMismatch = true;
 export const enableComponentStackLocations = true;

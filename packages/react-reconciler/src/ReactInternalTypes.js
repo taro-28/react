@@ -7,32 +7,13 @@
  * @flow
  */
 
-import type {Source} from 'shared/ReactElementType';
+import type { Source } from 'shared/ReactElementType';
 import type {
-  RefObject,
-  ReactContext,
-  MutableSourceSubscribeFn,
-  MutableSourceGetSnapshotFn,
-  MutableSourceVersion,
-  MutableSource,
-  StartTransitionOptions,
-  Wakeable,
+  MutableSource, MutableSourceVersion, ReactContext, RefObject, Wakeable
 } from 'shared/ReactTypes';
-import type {SuspenseInstance} from './ReactFiberHostConfig';
-import type {WorkTag} from './ReactWorkTags';
-import type {TypeOfMode} from './ReactTypeOfMode';
-import type {Flags} from './ReactFiberFlags';
-import type {Lane, Lanes, LaneMap} from './ReactFiberLane.old';
-import type {RootTag} from './ReactRootTags';
-import type {TimeoutHandle, NoTimeout} from './ReactFiberHostConfig';
-import type {Cache} from './ReactFiberCacheComponent.old';
+import type { NoTimeout, SuspenseInstance, TimeoutHandle } from './ReactFiberHostConfig';
+import type { Lanes } from './ReactFiberLane.old';
 // Doing this because there's a merge conflict because of the way sync-reconciler-fork
-// is implemented
-import type {
-  TracingMarkerInstance,
-  Transition,
-} from './ReactFiberTracingMarkerComponent.new';
-import type {ConcurrentUpdate} from './ReactFiberConcurrentUpdates.new';
 
 // Unwind Circular: moved from ReactFiberHooks.old
 export type HookType =
@@ -403,7 +384,6 @@ export type Dispatcher = {|
   ): T,
   useId(): string,
   useCacheRefresh?: () => <T>(?() => T, ?T) => void,
-  useMemoCache?: (size: number) => Array<any>,
 
   unstable_isNewReconciler?: boolean,
 |};

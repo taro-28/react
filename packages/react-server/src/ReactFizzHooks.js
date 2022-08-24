@@ -25,7 +25,7 @@ import {getTreeId} from './ReactFizzTreeContext';
 
 import {makeId} from './ReactServerFormatConfig';
 
-import {enableCache, enableUseMemoCacheHook} from 'shared/ReactFeatureFlags';
+import {enableCache} from 'shared/ReactFeatureFlags';
 import is from 'shared/objectIs';
 
 type BasicStateAction<S> = (S => S) | S;
@@ -537,10 +537,6 @@ function useCacheRefresh(): <T>(?() => T, ?T) => void {
   return unsupportedRefresh;
 }
 
-function useMemoCache(size: number): Array<any> {
-  return new Array(size);
-}
-
 function noop(): void {}
 
 export const Dispatcher: DispatcherType = {
@@ -570,9 +566,6 @@ export const Dispatcher: DispatcherType = {
 if (enableCache) {
   Dispatcher.getCacheForType = getCacheForType;
   Dispatcher.useCacheRefresh = useCacheRefresh;
-}
-if (enableUseMemoCacheHook) {
-  Dispatcher.useMemoCache = useMemoCache;
 }
 
 export let currentResponseState: null | ResponseState = (null: any);

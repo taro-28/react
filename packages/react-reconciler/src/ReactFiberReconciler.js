@@ -7,7 +7,7 @@
  * @flow
  */
 
-import {enableNewReconciler} from 'shared/ReactFeatureFlags';
+import { enableNewReconciler } from 'shared/ReactFeatureFlags';
 
 // The entry file imports either the old or new version of the reconciler.
 // During build and testing, this indirection is always shimmed with the actual
@@ -15,87 +15,26 @@ import {enableNewReconciler} from 'shared/ReactFeatureFlags';
 // only here for Flow purposes.
 
 import {
-  createContainer as createContainer_old,
-  createHydrationContainer as createHydrationContainer_old,
-  updateContainer as updateContainer_old,
-  batchedUpdates as batchedUpdates_old,
-  deferredUpdates as deferredUpdates_old,
-  discreteUpdates as discreteUpdates_old,
-  flushControlled as flushControlled_old,
-  flushSync as flushSync_old,
-  isAlreadyRendering as isAlreadyRendering_old,
-  flushPassiveEffects as flushPassiveEffects_old,
-  getPublicRootInstance as getPublicRootInstance_old,
-  attemptSynchronousHydration as attemptSynchronousHydration_old,
-  attemptDiscreteHydration as attemptDiscreteHydration_old,
-  attemptContinuousHydration as attemptContinuousHydration_old,
-  attemptHydrationAtCurrentPriority as attemptHydrationAtCurrentPriority_old,
-  findHostInstance as findHostInstance_old,
-  findHostInstanceWithWarning as findHostInstanceWithWarning_old,
-  findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_old,
-  shouldError as shouldError_old,
-  shouldSuspend as shouldSuspend_old,
-  injectIntoDevTools as injectIntoDevTools_old,
-  createPortal as createPortal_old,
-  createComponentSelector as createComponentSelector_old,
-  createHasPseudoClassSelector as createHasPseudoClassSelector_old,
-  createRoleSelector as createRoleSelector_old,
+  batchedUpdates as batchedUpdates_old, createComponentSelector as createComponentSelector_old, createContainer as createContainer_old, createHasPseudoClassSelector as createHasPseudoClassSelector_old, createPortal as createPortal_old, createRoleSelector as createRoleSelector_old,
   createTestNameSelector as createTestNameSelector_old,
-  createTextSelector as createTextSelector_old,
-  getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_old,
-  findAllNodes as findAllNodes_old,
-  findBoundingRects as findBoundingRects_old,
-  focusWithin as focusWithin_old,
-  observeVisibleRects as observeVisibleRects_old,
-  registerMutableSourceForHydration as registerMutableSourceForHydration_old,
-  runWithPriority as runWithPriority_old,
-  getCurrentUpdatePriority as getCurrentUpdatePriority_old,
+  createTextSelector as createTextSelector_old, deferredUpdates as deferredUpdates_old,
+  discreteUpdates as discreteUpdates_old, findAllNodes as findAllNodes_old,
+  findBoundingRects as findBoundingRects_old, findHostInstance as findHostInstance_old, findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_old, findHostInstanceWithWarning as findHostInstanceWithWarning_old, flushControlled as flushControlled_old, flushPassiveEffects as flushPassiveEffects_old, flushSync as flushSync_old, focusWithin as focusWithin_old, getCurrentUpdatePriority as getCurrentUpdatePriority_old, getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_old, getPublicRootInstance as getPublicRootInstance_old, injectIntoDevTools as injectIntoDevTools_old, isAlreadyRendering as isAlreadyRendering_old, observeVisibleRects as observeVisibleRects_old, runWithPriority as runWithPriority_old, shouldError as shouldError_old,
+  shouldSuspend as shouldSuspend_old, updateContainer as updateContainer_old
 } from './ReactFiberReconciler.old';
 
 import {
-  createContainer as createContainer_new,
-  createHydrationContainer as createHydrationContainer_new,
-  updateContainer as updateContainer_new,
-  batchedUpdates as batchedUpdates_new,
-  deferredUpdates as deferredUpdates_new,
-  discreteUpdates as discreteUpdates_new,
-  flushControlled as flushControlled_new,
-  flushSync as flushSync_new,
-  isAlreadyRendering as isAlreadyRendering_new,
-  flushPassiveEffects as flushPassiveEffects_new,
-  getPublicRootInstance as getPublicRootInstance_new,
-  attemptSynchronousHydration as attemptSynchronousHydration_new,
-  attemptDiscreteHydration as attemptDiscreteHydration_new,
-  attemptContinuousHydration as attemptContinuousHydration_new,
-  attemptHydrationAtCurrentPriority as attemptHydrationAtCurrentPriority_new,
-  findHostInstance as findHostInstance_new,
-  findHostInstanceWithWarning as findHostInstanceWithWarning_new,
-  findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_new,
-  shouldError as shouldError_new,
-  shouldSuspend as shouldSuspend_new,
-  injectIntoDevTools as injectIntoDevTools_new,
-  createPortal as createPortal_new,
-  createComponentSelector as createComponentSelector_new,
-  createHasPseudoClassSelector as createHasPseudoClassSelector_new,
-  createRoleSelector as createRoleSelector_new,
+  batchedUpdates as batchedUpdates_new, createComponentSelector as createComponentSelector_new, createContainer as createContainer_new, createHasPseudoClassSelector as createHasPseudoClassSelector_new, createPortal as createPortal_new, createRoleSelector as createRoleSelector_new,
   createTestNameSelector as createTestNameSelector_new,
-  createTextSelector as createTextSelector_new,
-  getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_new,
-  findAllNodes as findAllNodes_new,
-  findBoundingRects as findBoundingRects_new,
-  focusWithin as focusWithin_new,
-  observeVisibleRects as observeVisibleRects_new,
-  registerMutableSourceForHydration as registerMutableSourceForHydration_new,
-  runWithPriority as runWithPriority_new,
-  getCurrentUpdatePriority as getCurrentUpdatePriority_new,
+  createTextSelector as createTextSelector_new, deferredUpdates as deferredUpdates_new,
+  discreteUpdates as discreteUpdates_new, findAllNodes as findAllNodes_new,
+  findBoundingRects as findBoundingRects_new, findHostInstance as findHostInstance_new, findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_new, findHostInstanceWithWarning as findHostInstanceWithWarning_new, flushControlled as flushControlled_new, flushPassiveEffects as flushPassiveEffects_new, flushSync as flushSync_new, focusWithin as focusWithin_new, getCurrentUpdatePriority as getCurrentUpdatePriority_new, getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_new, getPublicRootInstance as getPublicRootInstance_new, injectIntoDevTools as injectIntoDevTools_new, isAlreadyRendering as isAlreadyRendering_new, observeVisibleRects as observeVisibleRects_new, runWithPriority as runWithPriority_new, shouldError as shouldError_new,
+  shouldSuspend as shouldSuspend_new, updateContainer as updateContainer_new
 } from './ReactFiberReconciler.new';
 
 export const createContainer = enableNewReconciler
   ? createContainer_new
   : createContainer_old;
-export const createHydrationContainer = enableNewReconciler
-  ? createHydrationContainer_new
-  : createHydrationContainer_old;
 export const updateContainer = enableNewReconciler
   ? updateContainer_new
   : updateContainer_old;
@@ -121,18 +60,6 @@ export const flushPassiveEffects = enableNewReconciler
 export const getPublicRootInstance = enableNewReconciler
   ? getPublicRootInstance_new
   : getPublicRootInstance_old;
-export const attemptSynchronousHydration = enableNewReconciler
-  ? attemptSynchronousHydration_new
-  : attemptSynchronousHydration_old;
-export const attemptDiscreteHydration = enableNewReconciler
-  ? attemptDiscreteHydration_new
-  : attemptDiscreteHydration_old;
-export const attemptContinuousHydration = enableNewReconciler
-  ? attemptContinuousHydration_new
-  : attemptContinuousHydration_old;
-export const attemptHydrationAtCurrentPriority = enableNewReconciler
-  ? attemptHydrationAtCurrentPriority_new
-  : attemptHydrationAtCurrentPriority_old;
 export const getCurrentUpdatePriority = enableNewReconciler
   ? getCurrentUpdatePriority_new
   : getCurrentUpdatePriority_old;
@@ -189,9 +116,6 @@ export const focusWithin = enableNewReconciler
 export const observeVisibleRects = enableNewReconciler
   ? observeVisibleRects_new
   : observeVisibleRects_old;
-export const registerMutableSourceForHydration = enableNewReconciler
-  ? registerMutableSourceForHydration_new
-  : registerMutableSourceForHydration_old;
 export const runWithPriority = enableNewReconciler
   ? runWithPriority_new
   : runWithPriority_old;

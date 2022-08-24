@@ -7,269 +7,126 @@
  * @flow
  */
 
-import type {
-  ReactProviderType,
-  ReactContext,
-  ReactNodeList,
-} from 'shared/ReactTypes';
-import type {LazyComponent as LazyComponentType} from 'react/src/ReactLazy';
-import type {Fiber, FiberRoot} from './ReactInternalTypes';
-import type {TypeOfMode} from './ReactTypeOfMode';
-import type {Lanes, Lane} from './ReactFiberLane.new';
-import type {MutableSource} from 'shared/ReactTypes';
-import type {
-  SuspenseState,
-  SuspenseListRenderState,
-  SuspenseListTailMode,
-} from './ReactFiberSuspenseComponent.new';
-import type {SuspenseContext} from './ReactFiberSuspenseContext.new';
-import type {
-  OffscreenProps,
-  OffscreenState,
-  OffscreenQueue,
-  OffscreenInstance,
-} from './ReactFiberOffscreenComponent';
+import type { LazyComponent as LazyComponentType } from 'react/src/ReactLazy';
+import {
+  enableUseMutableSource
+} from 'shared/ReactFeatureFlags';
 import type {
   Cache,
-  CacheComponentState,
-  SpawnedCachePool,
+  CacheComponentState
 } from './ReactFiberCacheComponent.new';
-import type {UpdateQueue} from './ReactFiberClassUpdateQueue.new';
-import type {RootState} from './ReactFiberRoot.new';
-import type {TracingMarkerInstance} from './ReactFiberTracingMarkerComponent.new';
-import {
-  enableCPUSuspense,
-  enableUseMutableSource,
-} from 'shared/ReactFeatureFlags';
+import type { UpdateQueue } from './ReactFiberClassUpdateQueue.new';
+import type { Lane, Lanes } from './ReactFiberLane.new';
+import type {
+  OffscreenInstance, OffscreenProps,
+  OffscreenState
+} from './ReactFiberOffscreenComponent';
+import type { RootState } from './ReactFiberRoot.new';
+import type { TracingMarkerInstance } from './ReactFiberTracingMarkerComponent.new';
+import type { Fiber, FiberRoot } from './ReactInternalTypes';
 
+import getComponentNameFromFiber from 'react-reconciler/src/getComponentNameFromFiber';
 import checkPropTypes from 'shared/checkPropTypes';
+import getComponentNameFromType from 'shared/getComponentNameFromType';
+import {
+  debugRenderPhaseSideEffectsForStrictMode,
+  disableLegacyContext, enableCache,
+  enableLazyContextPropagation, enableLegacyHidden, enableSchedulingProfiler,
+  enableTransitionTracing
+} from 'shared/ReactFeatureFlags';
+import ReactSharedInternals from 'shared/ReactSharedInternals';
+import { REACT_LAZY_TYPE } from 'shared/ReactSymbols';
+import shallowEqual from 'shared/shallowEqual';
+import {
+  setIsRendering
+} from './ReactCurrentFiber';
 import {
   markComponentRenderStarted,
   markComponentRenderStopped,
-  setIsStrictModeForDevtools,
+  setIsStrictModeForDevtools
 } from './ReactFiberDevToolsHook.new';
 import {
-  IndeterminateComponent,
-  FunctionComponent,
-  ClassComponent,
-  HostRoot,
-  HostComponent,
-  HostText,
-  HostPortal,
-  ForwardRef,
-  Fragment,
-  Mode,
-  ContextProvider,
-  ContextConsumer,
-  Profiler,
-  SuspenseComponent,
-  SuspenseListComponent,
-  MemoComponent,
-  SimpleMemoComponent,
-  LazyComponent,
-  IncompleteClassComponent,
-  ScopeComponent,
-  OffscreenComponent,
-  LegacyHiddenComponent,
-  CacheComponent,
-  TracingMarkerComponent,
-} from './ReactWorkTags';
-import {
-  NoFlags,
-  PerformedWork,
-  Placement,
-  Hydrating,
   ContentReset,
-  DidCapture,
-  Update,
-  Ref,
-  RefStatic,
-  ChildDeletion,
-  ForceUpdateForLegacySuspense,
-  StaticMask,
-  ShouldCapture,
-  ForceClientRender,
+  DidCapture, ForceClientRender, ForceUpdateForLegacySuspense, Hydrating, NoFlags,
+  PerformedWork,
+  Placement, Ref,
+  RefStatic, ShouldCapture
 } from './ReactFiberFlags';
-import ReactSharedInternals from 'shared/ReactSharedInternals';
+import { resolveFunctionForHotReloading } from './ReactFiberHotReloading.new';
 import {
-  debugRenderPhaseSideEffectsForStrictMode,
-  disableLegacyContext,
-  disableModulePatternComponents,
-  enableProfilerCommitHooks,
-  enableProfilerTimer,
-  warnAboutDefaultPropsOnFunctionComponents,
-  enableScopeAPI,
-  enableCache,
-  enableLazyContextPropagation,
-  enableSchedulingProfiler,
-  enableTransitionTracing,
-  enableLegacyHidden,
-} from 'shared/ReactFeatureFlags';
-import isArray from 'shared/isArray';
-import shallowEqual from 'shared/shallowEqual';
-import getComponentNameFromFiber from 'react-reconciler/src/getComponentNameFromFiber';
-import getComponentNameFromType from 'shared/getComponentNameFromType';
-import ReactStrictModeWarnings from './ReactStrictModeWarnings.new';
-import {REACT_LAZY_TYPE, getIteratorFn} from 'shared/ReactSymbols';
-import {
-  getCurrentFiberOwnerNameInDevOrNull,
-  setIsRendering,
-} from './ReactCurrentFiber';
-import {
-  resolveFunctionForHotReloading,
-  resolveForwardRefForHotReloading,
-  resolveClassForHotReloading,
-} from './ReactFiberHotReloading.new';
+  FunctionComponent, SimpleMemoComponent
+} from './ReactWorkTags';
 
 import {
+  createCapturedValueAtFiber
+} from './ReactCapturedValue';
+import {
   mountChildFibers,
-  reconcileChildFibers,
-  cloneChildFibers,
+  reconcileChildFibers
 } from './ReactChildFiber.new';
 import {
-  processUpdateQueue,
-  cloneUpdateQueue,
-  initializeUpdateQueue,
-  enqueueCapturedUpdate,
-} from './ReactFiberClassUpdateQueue.new';
+  createFiberFromFragment, createFiberFromTypeAndProps, createWorkInProgress,
+  isSimpleFunctionComponent
+} from './ReactFiber.new';
+import { CacheContext, pushCacheProvider } from './ReactFiberCacheComponent.new';
 import {
-  NoLane,
-  NoLanes,
-  SyncLane,
-  OffscreenLane,
-  DefaultHydrationLane,
-  SomeRetryLane,
-  NoTimestamp,
-  includesSomeLane,
-  laneToLanes,
-  removeLanes,
-  mergeLanes,
-  getBumpedLaneForHydration,
-  pickArbitraryLane,
-} from './ReactFiberLane.new';
-import {
-  ConcurrentMode,
-  NoMode,
-  ProfileMode,
-  StrictLegacyMode,
-} from './ReactTypeOfMode';
-import {
-  shouldSetTextContent,
-  isSuspenseInstancePending,
-  isSuspenseInstanceFallback,
-  getSuspenseInstanceFallbackErrorDetails,
-  registerSuspenseInstanceRetry,
-  supportsHydration,
-  isPrimaryRenderer,
-} from './ReactFiberHostConfig';
-import type {SuspenseInstance} from './ReactFiberHostConfig';
-import {shouldError, shouldSuspend} from './ReactFiberReconciler';
-import {pushHostContext, pushHostContainer} from './ReactFiberHostContext.new';
-import {
-  suspenseStackCursor,
-  pushSuspenseListContext,
-  ForceSuspenseFallback,
-  hasSuspenseListContext,
-  setDefaultShallowSuspenseListContext,
-  setShallowSuspenseListContext,
-  pushPrimaryTreeSuspenseHandler,
-  pushFallbackTreeSuspenseHandler,
-  pushOffscreenSuspenseHandler,
-  reuseSuspenseHandlerOnStack,
-  popSuspenseHandler,
-} from './ReactFiberSuspenseContext.new';
-import {
-  pushHiddenContext,
-  reuseHiddenContextOnStack,
-} from './ReactFiberHiddenContext.new';
-import {findFirstSuspended} from './ReactFiberSuspenseComponent.new';
-import {
-  pushProvider,
-  propagateContextChange,
-  lazilyPropagateParentContextChanges,
-  propagateParentContextChangesToDeferredTree,
-  checkIfContextChanged,
-  readContext,
-  prepareToReadContext,
-  scheduleContextWorkOnParentPath,
-} from './ReactFiberNewContext.new';
-import {
-  renderWithHooks,
-  checkDidRenderIdHook,
-  bailoutHooks,
-} from './ReactFiberHooks.new';
-import {stopProfilerTimerIfRunning} from './ReactProfilerTimer.new';
-import {
-  getMaskedContext,
-  getUnmaskedContext,
-  hasContextChanged as hasLegacyContextChanged,
-  pushContextProvider as pushLegacyContextProvider,
-  isContextProvider as isLegacyContextProvider,
-  pushTopLevelContextObject,
-  invalidateContextProvider,
-} from './ReactFiberContext.new';
-import {
-  getIsHydrating,
-  enterHydrationState,
-  reenterHydrationStateFromDehydratedSuspenseInstance,
-  resetHydrationState,
-  tryToClaimNextHydratableInstance,
-  warnIfHydrating,
-  queueHydrationError,
-} from './ReactFiberHydrationContext.new';
-import {
-  adoptClassInstance,
   constructClassInstance,
   mountClassInstance,
   resumeMountClassInstance,
-  updateClassInstance,
+  updateClassInstance
 } from './ReactFiberClassComponent.new';
-import {resolveDefaultProps} from './ReactFiberLazyComponent.new';
 import {
-  resolveLazyComponentTag,
-  createFiberFromTypeAndProps,
-  createFiberFromFragment,
-  createFiberFromOffscreen,
-  createWorkInProgress,
-  isSimpleFunctionComponent,
-} from './ReactFiber.new';
+  cloneUpdateQueue, enqueueCapturedUpdate, initializeUpdateQueue, processUpdateQueue
+} from './ReactFiberClassUpdateQueue.new';
 import {
-  retryDehydratedSuspenseBoundary,
-  scheduleUpdateOnFiber,
-  renderDidSuspendDelayIfPossible,
-  markSkippedUpdateLanes,
-  getWorkInProgressRoot,
-} from './ReactFiberWorkLoop.new';
-import {enqueueConcurrentRenderForLane} from './ReactFiberConcurrentUpdates.new';
-import {setWorkInProgressVersion} from './ReactMutableSource.new';
-import {pushCacheProvider, CacheContext} from './ReactFiberCacheComponent.new';
+  getMaskedContext,
+  getUnmaskedContext, invalidateContextProvider, isContextProvider as isLegacyContextProvider, pushContextProvider as pushLegacyContextProvider, pushTopLevelContextObject
+} from './ReactFiberContext.new';
 import {
-  createCapturedValue,
-  createCapturedValueAtFiber,
-  type CapturedValue,
-} from './ReactCapturedValue';
-import {createClassErrorUpdate} from './ReactFiberThrow.new';
-import is from 'shared/objectIs';
+  pushHiddenContext,
+  reuseHiddenContextOnStack
+} from './ReactFiberHiddenContext.new';
 import {
-  getForksAtLevel,
-  isForkedChild,
-  pushTreeId,
-  pushMaterializedTreeId,
-} from './ReactFiberTreeContext.new';
+  bailoutHooks, checkDidRenderIdHook, renderWithHooks
+} from './ReactFiberHooks.new';
 import {
-  requestCacheFromPool,
-  pushRootTransition,
-  getSuspendedCache,
-  pushTransition,
-  getOffscreenDeferredCache,
-  getPendingTransitions,
-} from './ReactFiberTransition.new';
+  getSuspenseInstanceFallbackErrorDetails, supportsHydration
+} from './ReactFiberHostConfig';
+import { pushHostContainer, pushHostContext } from './ReactFiberHostContext.new';
 import {
-  getMarkerInstances,
+  enterHydrationState, getIsHydrating, queueHydrationError, reenterHydrationStateFromDehydratedSuspenseInstance,
+  resetHydrationState,
+  tryToClaimNextHydratableInstance
+} from './ReactFiberHydrationContext.new';
+import {
+  DefaultHydrationLane, includesSomeLane,
+  laneToLanes, mergeLanes, NoLanes, OffscreenLane, pickArbitraryLane, removeLanes
+} from './ReactFiberLane.new';
+import {
+  lazilyPropagateParentContextChanges, prepareToReadContext, propagateContextChange, propagateParentContextChangesToDeferredTree, readContext
+} from './ReactFiberNewContext.new';
+import { shouldError } from './ReactFiberReconciler';
+import {
+  ForceSuspenseFallback, pushFallbackTreeSuspenseHandler,
+  pushOffscreenSuspenseHandler, pushPrimaryTreeSuspenseHandler, reuseSuspenseHandlerOnStack, setShallowSuspenseListContext
+} from './ReactFiberSuspenseContext.new';
+import { createClassErrorUpdate } from './ReactFiberThrow.new';
+import {
   pushMarkerInstance,
   pushRootMarkerInstance,
-  TransitionTracingMarker,
+  TransitionTracingMarker
 } from './ReactFiberTracingMarkerComponent.new';
+import {
+  getOffscreenDeferredCache,
+  getPendingTransitions, getSuspendedCache, pushRootTransition, pushTransition, requestCacheFromPool
+} from './ReactFiberTransition.new';
+import {
+  pushMaterializedTreeId
+} from './ReactFiberTreeContext.new';
+import {
+  ConcurrentMode,
+  NoMode, StrictLegacyMode
+} from './ReactTypeOfMode';
 
 const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
 
@@ -1029,17 +886,6 @@ function updateProfiler(
   workInProgress: Fiber,
   renderLanes: Lanes,
 ) {
-  if (enableProfilerTimer) {
-    workInProgress.flags |= Update;
-
-    if (enableProfilerCommitHooks) {
-      // Reset effect durations for the next eventual effect phase.
-      // These are reset during render to allow the DevTools commit hook a chance to read them,
-      const stateNode = workInProgress.stateNode;
-      stateNode.effectDuration = 0;
-      stateNode.passiveEffectDuration = 0;
-    }
-  }
   const nextProps = workInProgress.pendingProps;
   const nextChildren = nextProps.children;
   reconcileChildren(current, workInProgress, nextChildren, renderLanes);
@@ -1310,35 +1156,8 @@ function finishClassComponent(
     // the new API.
     // TODO: Warn in a future release.
     nextChildren = null;
-
-    if (enableProfilerTimer) {
-      stopProfilerTimerIfRunning(workInProgress);
-    }
   } else {
-    if (enableSchedulingProfiler) {
-      markComponentRenderStarted(workInProgress);
-    }
-    if (__DEV__) {
-      setIsRendering(true);
-      nextChildren = instance.render();
-      if (
-        debugRenderPhaseSideEffectsForStrictMode &&
-        workInProgress.mode & StrictLegacyMode
-      ) {
-        setIsStrictModeForDevtools(true);
-        try {
-          instance.render();
-        } finally {
-          setIsStrictModeForDevtools(false);
-        }
-      }
-      setIsRendering(false);
-    } else {
-      nextChildren = instance.render();
-    }
-    if (enableSchedulingProfiler) {
-      markComponentRenderStopped();
-    }
+    nextChildren = instance.render();
   }
 
   // React DevTools reads this flag.
@@ -1476,9 +1295,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
           root.mutableSourceEagerHydrationData;
         if (mutableSourceEagerHydrationData != null) {
           for (let i = 0; i < mutableSourceEagerHydrationData.length; i += 2) {
-            const mutableSource = ((mutableSourceEagerHydrationData[
-              i
-            ]: any): MutableSource<any>);
+            const mutableSource = ((mutableSourceEagerHydrationData[i]): MutableSource);
             const version = mutableSourceEagerHydrationData[i + 1];
             setWorkInProgressVersion(mutableSource, version);
           }
@@ -1515,7 +1332,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
     reconcileChildren(current, workInProgress, nextChildren, renderLanes);
   }
   return workInProgress.child;
-}
+};
 
 function mountHostRootWithoutHydrating(
   current: Fiber,
@@ -1599,12 +1416,6 @@ function mountLazyComponent(
   let child;
   switch (resolvedTag) {
     case FunctionComponent: {
-      if (__DEV__) {
-        validateFunctionComponentInDev(workInProgress, Component);
-        workInProgress.type = Component = resolveFunctionForHotReloading(
-          Component,
-        );
-      }
       child = updateFunctionComponent(
         null,
         workInProgress,
@@ -1615,11 +1426,6 @@ function mountLazyComponent(
       return child;
     }
     case ClassComponent: {
-      if (__DEV__) {
-        workInProgress.type = Component = resolveClassForHotReloading(
-          Component,
-        );
-      }
       child = updateClassComponent(
         null,
         workInProgress,
@@ -1630,11 +1436,6 @@ function mountLazyComponent(
       return child;
     }
     case ForwardRef: {
-      if (__DEV__) {
-        workInProgress.type = Component = resolveForwardRefForHotReloading(
-          Component,
-        );
-      }
       child = updateForwardRef(
         null,
         workInProgress,
@@ -1645,19 +1446,6 @@ function mountLazyComponent(
       return child;
     }
     case MemoComponent: {
-      if (__DEV__) {
-        if (workInProgress.type !== workInProgress.elementType) {
-          const outerPropTypes = Component.propTypes;
-          if (outerPropTypes) {
-            checkPropTypes(
-              outerPropTypes,
-              resolvedProps, // Resolved for outer only
-              'prop',
-              getComponentNameFromType(Component),
-            );
-          }
-        }
-      }
       child = updateMemoComponent(
         null,
         workInProgress,
@@ -1669,16 +1457,6 @@ function mountLazyComponent(
     }
   }
   let hint = '';
-  if (__DEV__) {
-    if (
-      Component !== null &&
-      typeof Component === 'object' &&
-      Component.$$typeof === REACT_LAZY_TYPE
-    ) {
-      hint = ' Did you wrap a component in React.lazy() more than once?';
-    }
-  }
-
   // This message intentionally doesn't mention ForwardRef or MemoComponent
   // because the fact that it's a separate type of work is an
   // implementation detail.
@@ -1753,83 +1531,21 @@ function mountIndeterminateComponent(
   if (enableSchedulingProfiler) {
     markComponentRenderStarted(workInProgress);
   }
-  if (__DEV__) {
-    if (
-      Component.prototype &&
-      typeof Component.prototype.render === 'function'
-    ) {
-      const componentName = getComponentNameFromType(Component) || 'Unknown';
-
-      if (!didWarnAboutBadClass[componentName]) {
-        console.error(
-          "The <%s /> component appears to have a render method, but doesn't extend React.Component. " +
-            'This is likely to cause errors. Change %s to extend React.Component instead.',
-          componentName,
-          componentName,
-        );
-        didWarnAboutBadClass[componentName] = true;
-      }
-    }
-
-    if (workInProgress.mode & StrictLegacyMode) {
-      ReactStrictModeWarnings.recordLegacyContextWarning(workInProgress, null);
-    }
-
-    setIsRendering(true);
-    ReactCurrentOwner.current = workInProgress;
-    value = renderWithHooks(
-      null,
-      workInProgress,
-      Component,
-      props,
-      context,
-      renderLanes,
-    );
-    hasId = checkDidRenderIdHook();
-    setIsRendering(false);
-  } else {
-    value = renderWithHooks(
-      null,
-      workInProgress,
-      Component,
-      props,
-      context,
-      renderLanes,
-    );
-    hasId = checkDidRenderIdHook();
-  }
+  value = renderWithHooks(
+    null,
+    workInProgress,
+    Component,
+    props,
+    context,
+    renderLanes,
+  );
+  hasId = checkDidRenderIdHook();
   if (enableSchedulingProfiler) {
     markComponentRenderStopped();
   }
 
   // React DevTools reads this flag.
   workInProgress.flags |= PerformedWork;
-
-  if (__DEV__) {
-    // Support for module components is deprecated and is removed behind a flag.
-    // Whether or not it would crash later, we want to show a good message in DEV first.
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      typeof value.render === 'function' &&
-      value.$$typeof === undefined
-    ) {
-      const componentName = getComponentNameFromType(Component) || 'Unknown';
-      if (!didWarnAboutModulePatternComponent[componentName]) {
-        console.error(
-          'The <%s /> component appears to be a function component that returns a class instance. ' +
-            'Change %s to a class that extends React.Component instead. ' +
-            "If you can't use a class try assigning the prototype on the function as a workaround. " +
-            "`%s.prototype = React.Component.prototype`. Don't use an arrow function since it " +
-            'cannot be called with `new` by React.',
-          componentName,
-          componentName,
-          componentName,
-        );
-        didWarnAboutModulePatternComponent[componentName] = true;
-      }
-    }
-  }
 
   if (
     // Run these checks in production only if the flag is off.
@@ -2385,17 +2101,6 @@ function mountSuspenseFallbackChildren(
     primaryChildFragment.childLanes = NoLanes;
     primaryChildFragment.pendingProps = primaryChildProps;
 
-    if (enableProfilerTimer && workInProgress.mode & ProfileMode) {
-      // Reset the durations from the first pass so they aren't included in the
-      // final amounts. This seems counterintuitive, since we're intentionally
-      // not measuring part of the render phase, but this makes it match what we
-      // do in Concurrent Mode.
-      primaryChildFragment.actualDuration = 0;
-      primaryChildFragment.actualStartTime = -1;
-      primaryChildFragment.selfBaseDuration = 0;
-      primaryChildFragment.treeBaseDuration = 0;
-    }
-
     fallbackChildFragment = createFiberFromFragment(
       fallbackChildren,
       mode,
@@ -2513,19 +2218,6 @@ function updateSuspenseFallbackChildren(
     primaryChildFragment = progressedPrimaryFragment;
     primaryChildFragment.childLanes = NoLanes;
     primaryChildFragment.pendingProps = primaryChildProps;
-
-    if (enableProfilerTimer && workInProgress.mode & ProfileMode) {
-      // Reset the durations from the first pass so they aren't included in the
-      // final amounts. This seems counterintuitive, since we're intentionally
-      // not measuring part of the render phase, but this makes it match what we
-      // do in Concurrent Mode.
-      primaryChildFragment.actualDuration = 0;
-      primaryChildFragment.actualStartTime = -1;
-      primaryChildFragment.selfBaseDuration =
-        currentPrimaryChildFragment.selfBaseDuration;
-      primaryChildFragment.treeBaseDuration =
-        currentPrimaryChildFragment.treeBaseDuration;
-    }
 
     // The fallback fiber was added as a deletion during the first pass.
     // However, since we're going to remain on the fallback, we no longer want
@@ -2653,15 +2345,6 @@ function mountDehydratedSuspenseComponent(
   // During the first pass, we'll bail out and not drill into the children.
   // Instead, we'll leave the content in place and try to hydrate it later.
   if ((workInProgress.mode & ConcurrentMode) === NoMode) {
-    if (__DEV__) {
-      console.error(
-        'Cannot hydrate Suspense in legacy mode. Switch from ' +
-          'ReactDOM.hydrate(element, container) to ' +
-          'ReactDOMClient.hydrateRoot(container, <App />)' +
-          '.render(element) or remove the Suspense components from ' +
-          'the server rendered components.',
-      );
-    }
     workInProgress.lanes = laneToLanes(SyncLane);
   } else if (isSuspenseInstanceFallback(suspenseInstance)) {
     // This is a client-only boundary. Since we won't get any content from the server
@@ -3500,11 +3183,6 @@ function bailoutOnAlreadyFinishedWork(
     workInProgress.dependencies = current.dependencies;
   }
 
-  if (enableProfilerTimer) {
-    // Don't update "base" render times for bailouts.
-    stopProfilerTimerIfRunning(workInProgress);
-  }
-
   markSkippedUpdateLanes(workInProgress.lanes);
 
   // Check if the children have any pending work.
@@ -3660,24 +3338,6 @@ function attemptEarlyBailoutIfNoScheduledUpdate(
       break;
     }
     case Profiler:
-      if (enableProfilerTimer) {
-        // Profiler should only call onRender when one of its descendants actually rendered.
-        const hasChildWork = includesSomeLane(
-          renderLanes,
-          workInProgress.childLanes,
-        );
-        if (hasChildWork) {
-          workInProgress.flags |= Update;
-        }
-
-        if (enableProfilerCommitHooks) {
-          // Reset effect durations for the next eventual effect phase.
-          // These are reset during render to allow the DevTools commit hook a chance to read them,
-          const stateNode = workInProgress.stateNode;
-          stateNode.effectDuration = 0;
-          stateNode.passiveEffectDuration = 0;
-        }
-      }
       break;
     case SuspenseComponent: {
       const state: SuspenseState | null = workInProgress.memoizedState;
@@ -4104,4 +3764,5 @@ function beginWork(
   );
 }
 
-export {beginWork};
+export { beginWork };
+
