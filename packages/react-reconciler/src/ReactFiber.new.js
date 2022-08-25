@@ -17,7 +17,6 @@ import type {
 } from './ReactFiberOffscreenComponent';
 import type {TracingMarkerInstance} from './ReactFiberTracingMarkerComponent.new';
 import type {Fiber} from './ReactInternalTypes';
-import type {RootTag} from './ReactRootTags';
 import type {TypeOfMode} from './ReactTypeOfMode';
 import type {WorkTag} from './ReactWorkTags';
 
@@ -31,7 +30,6 @@ import {
 } from 'shared/ReactFeatureFlags';
 import {NoFlags, Placement, StaticMask} from './ReactFiberFlags';
 import {OffscreenVisible} from './ReactFiberOffscreenComponent';
-import {ConcurrentRoot} from './ReactRootTags';
 import {
   CacheComponent,
   ClassComponent,
@@ -301,23 +299,18 @@ export function resetWorkInProgress(workInProgress: Fiber, renderLanes: Lanes) {
 }
 
 export function createHostRootFiber(
-  tag: RootTag,
   concurrentUpdatesByDefaultOverride: null | boolean,
 ): Fiber {
   let mode;
-  if (tag === ConcurrentRoot) {
-    mode = ConcurrentMode;
-    if (
-      // We only use this flag for our repo tests to check both behaviors.
-      // TODO: Flip this flag and rename it something like "forceConcurrentByDefaultForTesting"
-      !enableSyncDefaultUpdates ||
-      // Only for internal experiments.
-      (allowConcurrentByDefault && concurrentUpdatesByDefaultOverride)
-    ) {
-      mode |= ConcurrentUpdatesByDefaultMode;
-    }
-  } else {
-    mode = NoMode;
+  mode = ConcurrentMode;
+  if (
+    // We only use this flag for our repo tests to check both behaviors.
+    // TODO: Flip this flag and rename it something like "forceConcurrentByDefaultForTesting"
+    !enableSyncDefaultUpdates ||
+    // Only for internal experiments.
+    (allowConcurrentByDefault && concurrentUpdatesByDefaultOverride)
+  ) {
+    mode |= ConcurrentUpdatesByDefaultMode;
   }
   return createFiber(HostRoot, null, null, mode);
 }

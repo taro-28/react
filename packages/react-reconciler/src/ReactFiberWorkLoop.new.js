@@ -23,8 +23,6 @@ import type {Fiber, FiberRoot} from './ReactInternalTypes';
 import is from 'shared/objectIs';
 import {
   deferRenderPhaseUpdateToNextBatch,
-  disableSchedulerTimeoutInWorkLoop,
-  enableCache,
   enableCreateEventHandleAPI,
   enableTransitionTracing,
   skipUnmountedBoundaries,
@@ -92,7 +90,6 @@ import {
 } from './ReactFiberConcurrentUpdates.new';
 import {
   BeforeMutationMask,
-  ForceClientRender,
   HostEffectMask,
   Incomplete,
   LayoutMask,
@@ -113,7 +110,6 @@ import {
   getNextLanes,
   getTransitionsForLanes,
   includesBlockingLane,
-  includesExpiredLane,
   includesNonIdleWork,
   includesOnlyRetries,
   includesOnlyTransitions,
@@ -134,7 +130,6 @@ import {
   SyncLane,
 } from './ReactFiberLane.new';
 import {resetContextDependencies} from './ReactFiberNewContext.new';
-import {isRootDehydrated} from './ReactFiberShellHydration';
 import {
   createClassErrorUpdate,
   createRootErrorUpdate,
@@ -153,7 +148,6 @@ import {
 } from './ReactWorkTags';
 
 // DEV stuff
-import {releaseCache} from './ReactFiberCacheComponent.new';
 import {processTransitionCallbacks} from './ReactFiberTracingMarkerComponent.new';
 import {
   attemptToPingSuspendedWakeable,
@@ -390,7 +384,7 @@ let legacyErrorBoundariesThatAlreadyFailed: Set<mixed> | null = null;
 let rootDoesHavePassiveEffects: boolean = false;
 let rootWithPendingPassiveEffects: FiberRoot | null = null;
 let pendingPassiveEffectsLanes: Lanes = NoLanes;
-let pendingPassiveEffectsRemainingLanes: Lanes = NoLanes;
+const pendingPassiveEffectsRemainingLanes: Lanes = NoLanes;
 let pendingPassiveTransitions: Array<Transition> | null = null;
 
 // Use these to prevent an infinite loop of nested updates
@@ -719,7 +713,7 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
 
   // Determine the next lanes to work on, using the fields stored
   // on the root.
-  let lanes = getNextLanes(
+  const lanes = getNextLanes(
     root,
     root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
   );
@@ -728,39 +722,8 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
     return null;
   }
 
-  // We disable time-slicing in some cases: if the work has been CPU-bound
-  // for too long ("expired" work, to prevent starvation), or we're in
-  // sync-updates-by-default mode.
-  // TODO: We only check `didTimeout` defensively, to account for a Scheduler
-  // bug we're still investigating. Once the bug in Scheduler is fixed,
-  // we can remove this, since we track expiration ourselves.
-  const shouldTimeSlice =
-    !includesBlockingLane(root, lanes) &&
-    !includesExpiredLane(root, lanes) &&
-    (disableSchedulerTimeoutInWorkLoop || !didTimeout);
-  let exitStatus = shouldTimeSlice
-    ? renderRootConcurrent(root, lanes)
-    : renderRootSync(root, lanes);
+  let exitStatus = renderRootConcurrent(root, lanes);
   if (exitStatus !== RootInProgress) {
-    if (exitStatus === RootErrored) {
-      // If something threw an error, try rendering one more time. We'll
-      // render synchronously to block concurrent data mutations, and we'll
-      // includes all pending updates are included. If it still fails after
-      // the second attempt, we'll give up and commit the resulting tree.
-      const errorRetryLanes = getLanesToRetrySynchronouslyOnError(root);
-      if (errorRetryLanes !== NoLanes) {
-        lanes = errorRetryLanes;
-        exitStatus = recoverFromConcurrentError(root, errorRetryLanes);
-      }
-    }
-    if (exitStatus === RootFatalErrored) {
-      const fatalError = workInProgressRootFatalError;
-      prepareFreshStack(root, NoLanes);
-      markRootSuspended(root, lanes);
-      ensureRootIsScheduled(root, now());
-      throw fatalError;
-    }
-
     if (exitStatus === RootDidNotComplete) {
       // The render unwound without completing the tree. This happens in special
       // cases where need to exit the current render without producing a
@@ -787,24 +750,6 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
         // A store was mutated in an interleaved event. Render again,
         // synchronously, to block further mutations.
         exitStatus = renderRootSync(root, lanes);
-
-        // We need to check again if something threw
-        if (exitStatus === RootErrored) {
-          const errorRetryLanes = getLanesToRetrySynchronouslyOnError(root);
-          if (errorRetryLanes !== NoLanes) {
-            lanes = errorRetryLanes;
-            exitStatus = recoverFromConcurrentError(root, errorRetryLanes);
-            // We assume the tree is now consistent because we didn't yield to any
-            // concurrent events.
-          }
-        }
-        if (exitStatus === RootFatalErrored) {
-          const fatalError = workInProgressRootFatalError;
-          prepareFreshStack(root, NoLanes);
-          markRootSuspended(root, lanes);
-          ensureRootIsScheduled(root, now());
-          throw fatalError;
-        }
       }
 
       // We now have a consistent tree. The next step is either to commit it,
@@ -830,22 +775,6 @@ function recoverFromConcurrentError(root, errorRetryLanes) {
 
   // Before rendering again, save the errors from the previous attempt.
   const errorsFromFirstAttempt = workInProgressRootConcurrentErrors;
-
-  if (isRootDehydrated(root)) {
-    // The shell failed to hydrate. Set a flag to force a client rendering
-    // during the next attempt. To do this, we call prepareFreshStack now
-    // to create the root work-in-progress fiber. This is a bit weird in terms
-    // of factoring, because it relies on renderRootSync not calling
-    // prepareFreshStack again in the call below, which happens because the
-    // root and lanes haven't changed.
-    //
-    // TODO: I think what we should do is set ForceClientRender inside
-    // throwException, like we do for nested Suspense boundaries. The reason
-    // it's here instead is so we can switch to the synchronous work loop, too.
-    // Something to consider for a future refactor.
-    const rootWorkInProgress = prepareFreshStack(root, errorRetryLanes);
-    rootWorkInProgress.flags |= ForceClientRender;
-  }
 
   const exitStatus = renderRootSync(root, errorRetryLanes);
   if (exitStatus !== RootErrored) {
@@ -881,22 +810,6 @@ export function queueRecoverableErrors(errors: Array<CapturedValue<mixed>>) {
 function finishConcurrentRender(root, exitStatus, lanes) {
   switch (exitStatus) {
     case RootInProgress:
-    case RootFatalErrored: {
-      throw new Error('Root did not complete. This is a bug in React.');
-    }
-    // Flow knows about invariant, so it complains if I add a break
-    // statement, but eslint doesn't know about invariant, so it complains
-    // if I do. eslint-disable-next-line no-fallthrough
-    case RootErrored: {
-      // We should have already attempted to retry this tree. If we reached
-      // this point, it errored again. Commit it.
-      commitRoot(
-        root,
-        workInProgressRootRecoverableErrors,
-        workInProgressTransitions,
-      );
-      break;
-    }
     case RootSuspended: {
       markRootSuspended(root, lanes);
 
@@ -1775,10 +1688,6 @@ function commitRootImpl(
     workInProgressRoot = null;
     workInProgress = null;
     workInProgressRootRenderLanes = NoLanes;
-  } else {
-    // This indicates that the last root we worked on is not the same one that
-    // we're committing now. This most commonly happens when a suspended root
-    // times out.
   }
 
   // If there are pending passive effects, schedule a callback to process them.
@@ -1792,7 +1701,6 @@ function commitRootImpl(
   ) {
     if (!rootDoesHavePassiveEffects) {
       rootDoesHavePassiveEffects = true;
-      pendingPassiveEffectsRemainingLanes = remainingLanes;
       // workInProgressTransitions might be overwritten, so we want
       // to store it in pendingPassiveTransitions until they get processed
       // We need to pass this through as an argument to commitRoot
@@ -1889,10 +1797,6 @@ function commitRootImpl(
     rootDoesHavePassiveEffects = false;
     rootWithPendingPassiveEffects = root;
     pendingPassiveEffectsLanes = lanes;
-  } else {
-    // There were no passive effects, so we can immediately release the cache
-    // pool for this render.
-    releaseRootPooledCache(root, remainingLanes);
   }
 
   // Read this again, since an effect might have updated it
@@ -1973,21 +1877,6 @@ function commitRootImpl(
   return null;
 }
 
-function releaseRootPooledCache(root: FiberRoot, remainingLanes: Lanes) {
-  if (enableCache) {
-    const pooledCacheLanes = (root.pooledCacheLanes &= remainingLanes);
-    if (pooledCacheLanes === NoLanes) {
-      // None of the remaining work relies on the cache pool. Clear it so
-      // subsequent requests get a new cache
-      const pooledCache = root.pooledCache;
-      if (pooledCache != null) {
-        root.pooledCache = null;
-        releaseCache(pooledCache);
-      }
-    }
-  }
-}
-
 export function flushPassiveEffects(): boolean {
   // Returns whether passive effects were flushed.
   // TODO: Combine this check with the one in flushPassiveEFfectsImpl. We should
@@ -1996,15 +1885,9 @@ export function flushPassiveEffects(): boolean {
   // `Scheduler.runWithPriority`, which accepts a function. But now we track the
   // priority within React itself, so we can mutate the variable directly.
   if (rootWithPendingPassiveEffects !== null) {
-    // Cache the root since rootWithPendingPassiveEffects is cleared in
-    // flushPassiveEffectsImpl
-    const root = rootWithPendingPassiveEffects;
     // Cache and clear the remaining lanes flag; it must be reset since this
     // method can be called from various places, not always from commitRoot
     // where the remaining lanes are known
-    const remainingLanes = pendingPassiveEffectsRemainingLanes;
-    pendingPassiveEffectsRemainingLanes = NoLanes;
-
     const renderPriority = lanesToEventPriority(pendingPassiveEffectsLanes);
     const priority = lowerEventPriority(DefaultEventPriority, renderPriority);
     const prevTransition = ReactCurrentBatchConfig.transition;
@@ -2017,11 +1900,6 @@ export function flushPassiveEffects(): boolean {
     } finally {
       setCurrentUpdatePriority(previousPriority);
       ReactCurrentBatchConfig.transition = prevTransition;
-
-      // Once passive effects have run for the tree - giving components a
-      // chance to retain cache instances they use - release the pooled
-      // cache at the root (if there is one)
-      releaseRootPooledCache(root, remainingLanes);
     }
   }
   return false;

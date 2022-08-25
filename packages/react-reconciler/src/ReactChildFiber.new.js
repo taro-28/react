@@ -9,88 +9,39 @@
 
 import type {ReactElement} from 'shared/ReactElementType';
 import type {ReactPortal} from 'shared/ReactTypes';
-import type {Fiber} from './ReactInternalTypes';
 import type {Lanes} from './ReactFiberLane.new';
+import type {Fiber} from './ReactInternalTypes';
 
 import getComponentNameFromFiber from 'react-reconciler/src/getComponentNameFromFiber';
-import {Placement, ChildDeletion, Forked} from './ReactFiberFlags';
+import {checkPropStringCoercion} from 'shared/CheckStringCoercion';
+import isArray from 'shared/isArray';
 import {
   getIteratorFn,
   REACT_ELEMENT_TYPE,
   REACT_FRAGMENT_TYPE,
-  REACT_PORTAL_TYPE,
   REACT_LAZY_TYPE,
+  REACT_PORTAL_TYPE,
 } from 'shared/ReactSymbols';
-import {ClassComponent, HostText, HostPortal, Fragment} from './ReactWorkTags';
-import isArray from 'shared/isArray';
-import {warnAboutStringRefs} from 'shared/ReactFeatureFlags';
-import {checkPropStringCoercion} from 'shared/CheckStringCoercion';
+import {ChildDeletion, Forked, Placement} from './ReactFiberFlags';
+import {ClassComponent, Fragment, HostPortal, HostText} from './ReactWorkTags';
 
 import {
-  createWorkInProgress,
-  resetWorkInProgress,
   createFiberFromElement,
   createFiberFromFragment,
-  createFiberFromText,
   createFiberFromPortal,
+  createFiberFromText,
+  createWorkInProgress,
+  resetWorkInProgress,
 } from './ReactFiber.new';
 import {emptyRefsObject} from './ReactFiberClassComponent.new';
 import {isCompatibleFamilyForHotReloading} from './ReactFiberHotReloading.new';
-import {StrictLegacyMode} from './ReactTypeOfMode';
 import {getIsHydrating} from './ReactFiberHydrationContext.new';
 import {pushTreeFork} from './ReactFiberTreeContext.new';
 
 let didWarnAboutMaps;
 let didWarnAboutGenerators;
-let didWarnAboutStringRefs;
-let ownerHasKeyUseWarning;
 let ownerHasFunctionTypeWarning;
-let warnForMissingKey = (child: mixed, returnFiber: Fiber) => {};
-
-if (__DEV__) {
-  didWarnAboutMaps = false;
-  didWarnAboutGenerators = false;
-  didWarnAboutStringRefs = {};
-
-  /**
-   * Warn if there's no key explicitly set on dynamic arrays of children or
-   * object keys are not valid. This allows us to keep track of children between
-   * updates.
-   */
-  ownerHasKeyUseWarning = {};
-  ownerHasFunctionTypeWarning = {};
-
-  warnForMissingKey = (child: mixed, returnFiber: Fiber) => {
-    if (child === null || typeof child !== 'object') {
-      return;
-    }
-    if (!child._store || child._store.validated || child.key != null) {
-      return;
-    }
-
-    if (typeof child._store !== 'object') {
-      throw new Error(
-        'React Component in warnForMissingKey should have a _store. ' +
-          'This error is likely caused by a bug in React. Please file an issue.',
-      );
-    }
-
-    child._store.validated = true;
-
-    const componentName = getComponentNameFromFiber(returnFiber) || 'Component';
-
-    if (ownerHasKeyUseWarning[componentName]) {
-      return;
-    }
-    ownerHasKeyUseWarning[componentName] = true;
-
-    console.error(
-      'Each child in a list should have a unique ' +
-        '"key" prop. See https://reactjs.org/link/warning-keys for ' +
-        'more information.',
-    );
-  };
-}
+const warnForMissingKey = (child: mixed, returnFiber: Fiber) => {};
 
 function coerceRef(
   returnFiber: Fiber,
@@ -103,48 +54,6 @@ function coerceRef(
     typeof mixedRef !== 'function' &&
     typeof mixedRef !== 'object'
   ) {
-    if (__DEV__) {
-      // TODO: Clean this up once we turn on the string ref warning for
-      // everyone, because the strict mode case will no longer be relevant
-      if (
-        (returnFiber.mode & StrictLegacyMode || warnAboutStringRefs) &&
-        // We warn in ReactElement.js if owner and self are equal for string refs
-        // because these cannot be automatically converted to an arrow function
-        // using a codemod. Therefore, we don't have to warn about string refs again.
-        !(
-          element._owner &&
-          element._self &&
-          element._owner.stateNode !== element._self
-        )
-      ) {
-        const componentName =
-          getComponentNameFromFiber(returnFiber) || 'Component';
-        if (!didWarnAboutStringRefs[componentName]) {
-          if (warnAboutStringRefs) {
-            console.error(
-              'Component "%s" contains the string ref "%s". Support for string refs ' +
-                'will be removed in a future major release. We recommend using ' +
-                'useRef() or createRef() instead. ' +
-                'Learn more about using refs safely here: ' +
-                'https://reactjs.org/link/strict-mode-string-ref',
-              componentName,
-              mixedRef,
-            );
-          } else {
-            console.error(
-              'A string ref, "%s", has been found within a strict mode tree. ' +
-                'String refs are a source of potential bugs and should be avoided. ' +
-                'We recommend using useRef() or createRef() instead. ' +
-                'Learn more about using refs safely here: ' +
-                'https://reactjs.org/link/strict-mode-string-ref',
-              mixedRef,
-            );
-          }
-          didWarnAboutStringRefs[componentName] = true;
-        }
-      }
-    }
-
     if (element._owner) {
       const owner: ?Fiber = (element._owner: any);
       let inst;

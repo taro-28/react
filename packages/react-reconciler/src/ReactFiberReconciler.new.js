@@ -7,58 +7,57 @@
  * @flow
  */
 
-import type { ReactNodeList } from 'shared/ReactTypes';
+import type {ReactNodeList} from 'shared/ReactTypes';
+import type {Container, PublicInstance} from './ReactFiberHostConfig';
+import type {Lane} from './ReactFiberLane.new';
 import type {
-  Container, PublicInstance
-} from './ReactFiberHostConfig';
-import type { Lane } from './ReactFiberLane.new';
-import type { SuspenseState } from './ReactFiberSuspenseComponent.new';
-import type {
-  Fiber, FiberRoot, TransitionTracingCallbacks
+  Fiber,
+  FiberRoot,
+  TransitionTracingCallbacks,
 } from './ReactInternalTypes';
-import type { RootTag } from './ReactRootTags';
 
-import { get as getInstance } from 'shared/ReactInstanceMap';
+import {get as getInstance} from 'shared/ReactInstanceMap';
 import {
   getCurrentUpdatePriority,
-  runWithPriority
+  runWithPriority,
 } from './ReactEventPriorities.new';
 import {
   createUpdate,
   enqueueUpdate,
-  entangleTransitions
+  entangleTransitions,
 } from './ReactFiberClassUpdateQueue.new';
-import {
-  emptyContextObject, findCurrentUnmaskedContext, isContextProvider as isLegacyContextProvider, processChildContext
-} from './ReactFiberContext.new';
-import { getPublicInstance } from './ReactFiberHostConfig';
-import {
-  higherPriorityLane
-} from './ReactFiberLane.new';
-import { createFiberRoot } from './ReactFiberRoot.new';
+import {getPublicInstance} from './ReactFiberHostConfig';
+import {createFiberRoot} from './ReactFiberRoot.new';
 import {
   findCurrentHostFiber,
-  findCurrentHostFiberWithNoPortals
+  findCurrentHostFiberWithNoPortals,
 } from './ReactFiberTreeReflection';
 import {
-  batchedUpdates, deferredUpdates,
-  discreteUpdates, flushControlled, flushPassiveEffects, flushSync,
-  isAlreadyRendering, requestEventTime,
-  requestUpdateLane, scheduleUpdateOnFiber
+  batchedUpdates,
+  deferredUpdates,
+  discreteUpdates,
+  flushControlled,
+  flushPassiveEffects,
+  flushSync,
+  isAlreadyRendering,
+  requestEventTime,
+  requestUpdateLane,
+  scheduleUpdateOnFiber,
 } from './ReactFiberWorkLoop.new';
-import {
-  ClassComponent, HostComponent
-} from './ReactWorkTags';
-export { registerMutableSourceForHydration } from './ReactMutableSource.new';
-export { createPortal } from './ReactPortal';
+import {HostComponent} from './ReactWorkTags';
+export {registerMutableSourceForHydration} from './ReactMutableSource.new';
+export {createPortal} from './ReactPortal';
 export {
   createComponentSelector,
   createHasPseudoClassSelector,
   createRoleSelector,
   createTestNameSelector,
-  createTextSelector, findAllNodes,
+  createTextSelector,
+  findAllNodes,
   findBoundingRects,
-  focusWithin, getFindAllNodesFailureDescription, observeVisibleRects
+  focusWithin,
+  getFindAllNodesFailureDescription,
+  observeVisibleRects,
 } from './ReactTestSelectors';
 export {
   batchedUpdates,
@@ -69,32 +68,11 @@ export {
   isAlreadyRendering,
   flushPassiveEffects,
 };
-export { getCurrentUpdatePriority, runWithPriority };
-export { findHostInstance };
-export { findHostInstanceWithWarning };
+export {getCurrentUpdatePriority, runWithPriority};
+export {findHostInstance};
+export {findHostInstanceWithWarning};
 
 type OpaqueRoot = FiberRoot;
-
-
-function getContextForSubtree(
-  parentComponent: ?React$Component<any, any>,
-): Object {
-  if (!parentComponent) {
-    return emptyContextObject;
-  }
-
-  const fiber = getInstance(parentComponent);
-  const parentContext = findCurrentUnmaskedContext(fiber);
-
-  if (fiber.tag === ClassComponent) {
-    const Component = fiber.type;
-    if (isLegacyContextProvider(Component)) {
-      return processChildContext(fiber, Component, parentContext);
-    }
-  }
-
-  return parentContext;
-}
 
 function findHostInstance(component: Object): PublicInstance | null {
   const fiber = getInstance(component);
@@ -124,13 +102,11 @@ function findHostInstanceWithWarning(
 
 export function createContainer(
   containerInfo: Container,
-  tag: RootTag,
   concurrentUpdatesByDefaultOverride: null | boolean,
   transitionCallbacks: null | TransitionTracingCallbacks,
 ): OpaqueRoot {
   return createFiberRoot(
     containerInfo,
-    tag,
     concurrentUpdatesByDefaultOverride,
     transitionCallbacks,
   );
@@ -162,7 +138,6 @@ export function updateContainer(
   return lane;
 }
 
-
 export function getPublicRootInstance(
   container: OpaqueRoot,
 ): React$Component<any, any> | PublicInstance | null {
@@ -178,17 +153,6 @@ export function getPublicRootInstance(
   }
 }
 
-
-function markRetryLaneImpl(fiber: Fiber, retryLane: Lane) {
-  const suspenseState: null | SuspenseState = fiber.memoizedState;
-  if (suspenseState !== null && suspenseState.dehydrated !== null) {
-    suspenseState.retryLane = higherPriorityLane(
-      suspenseState.retryLane,
-      retryLane,
-    );
-  }
-}
-
 export function findHostInstanceWithNoPortals(
   fiber: Fiber,
 ): PublicInstance | null {
@@ -199,13 +163,13 @@ export function findHostInstanceWithNoPortals(
   return hostFiber.stateNode;
 }
 
-let shouldErrorImpl = fiber => null;
+const shouldErrorImpl = fiber => null;
 
 export function shouldError(fiber: Fiber): ?boolean {
   return shouldErrorImpl(fiber);
 }
 
-let shouldSuspendImpl = fiber => false;
+const shouldSuspendImpl = fiber => false;
 
 export function shouldSuspend(fiber: Fiber): boolean {
   return shouldSuspendImpl(fiber);

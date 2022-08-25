@@ -7,31 +7,27 @@
  * @flow
  */
 
-import type {FiberRoot} from './ReactInternalTypes';
-import type {
-  UpdateQueue as HookQueue,
-  Update as HookUpdate,
-} from './ReactFiberHooks.new';
 import type {
   SharedQueue as ClassQueue,
   Update as ClassUpdate,
 } from './ReactFiberClassUpdateQueue.new';
+import type {
+  Update as HookUpdate,
+  UpdateQueue as HookQueue,
+} from './ReactFiberHooks.new';
 import type {Lane, Lanes} from './ReactFiberLane.new';
 import type {OffscreenInstance} from './ReactFiberOffscreenComponent';
+import type {FiberRoot} from './ReactInternalTypes';
 
 import {
-  warnAboutUpdateOnNotYetMountedFiberInDEV,
-  throwIfInfiniteUpdateLoopDetected,
-} from './ReactFiberWorkLoop.new';
-import {
+  markHiddenUpdate,
+  mergeLanes,
   NoLane,
   NoLanes,
-  mergeLanes,
-  markHiddenUpdate,
 } from './ReactFiberLane.new';
-import {NoFlags, Placement, Hydrating} from './ReactFiberFlags';
-import {HostRoot, OffscreenComponent} from './ReactWorkTags';
 import {OffscreenVisible} from './ReactFiberOffscreenComponent';
+import {throwIfInfiniteUpdateLoopDetected} from './ReactFiberWorkLoop.new';
+import {HostRoot, OffscreenComponent} from './ReactWorkTags';
 
 export type ConcurrentUpdate = {
   next: ConcurrentUpdate,
@@ -251,25 +247,11 @@ function getRootForUpdatedFiber(sourceFiber: Fiber): FiberRoot | null {
   // the `childLanes`, anyway, but now those two traversals happen at
   // different times.
   // TODO: Consider adding a `root` backpointer on the update queue.
-  detectUpdateOnUnmountedFiber(sourceFiber, sourceFiber);
   let node = sourceFiber;
   let parent = node.return;
   while (parent !== null) {
-    detectUpdateOnUnmountedFiber(sourceFiber, node);
     node = parent;
     parent = node.return;
   }
   return node.tag === HostRoot ? (node.stateNode: FiberRoot) : null;
-}
-
-function detectUpdateOnUnmountedFiber(sourceFiber: Fiber, parent: Fiber) {
-  if (__DEV__) {
-    const alternate = parent.alternate;
-    if (
-      alternate === null &&
-      (parent.flags & (Placement | Hydrating)) !== NoFlags
-    ) {
-      warnAboutUpdateOnNotYetMountedFiberInDEV(sourceFiber);
-    }
-  }
 }

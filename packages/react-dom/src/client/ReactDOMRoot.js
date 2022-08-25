@@ -9,10 +9,9 @@
 
 import type {
   FiberRoot,
-  TransitionTracingCallbacks
+  TransitionTracingCallbacks,
 } from 'react-reconciler/src/ReactInternalTypes';
-import type { ReactNodeList } from 'shared/ReactTypes';
-
+import type {ReactNodeList} from 'shared/ReactTypes';
 
 export type RootType = {
   render(children: ReactNodeList): void,
@@ -27,23 +26,26 @@ export type CreateRootOptions = {
   ...
 };
 
-
-import { listenToAllSupportedEvents } from '../events/DOMPluginEventSystem';
+import {listenToAllSupportedEvents} from '../events/DOMPluginEventSystem';
 import {
-  COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, DOCUMENT_NODE, ELEMENT_NODE
+  COMMENT_NODE,
+  DOCUMENT_FRAGMENT_NODE,
+  DOCUMENT_NODE,
+  ELEMENT_NODE,
 } from '../shared/HTMLNodeType';
 import {
   markContainerAsRoot,
-  unmarkContainerAsRoot
+  unmarkContainerAsRoot,
 } from './ReactDOMComponentTree';
 
 import {
-  createContainer, flushSync, updateContainer
+  createContainer,
+  flushSync,
+  updateContainer,
 } from 'react-reconciler/src/ReactFiberReconciler';
-import { ConcurrentRoot } from 'react-reconciler/src/ReactRootTags';
 import {
   allowConcurrentByDefault,
-  disableCommentsAsDOMContainers
+  disableCommentsAsDOMContainers,
 } from 'shared/ReactFeatureFlags';
 
 /* global reportError */
@@ -62,9 +64,7 @@ function ReactDOMRoot(internalRoot: FiberRoot) {
   this._internalRoot = internalRoot;
 }
 
-ReactDOMRoot.prototype.render = function(
-  children: ReactNodeList,
-): void {
+ReactDOMRoot.prototype.render = function(children: ReactNodeList): void {
   const root = this._internalRoot;
   if (root === null) {
     throw new Error('Cannot update an unmounted root.');
@@ -110,7 +110,6 @@ export function createRoot(
 
   const root = createContainer(
     container,
-    ConcurrentRoot,
     concurrentUpdatesByDefaultOverride,
     transitionCallbacks,
   );
@@ -124,8 +123,6 @@ export function createRoot(
 
   return new ReactDOMRoot(root);
 }
-
-
 
 export function isValidContainer(node: any): boolean {
   return !!(

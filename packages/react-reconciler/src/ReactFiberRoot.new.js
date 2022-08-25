@@ -7,29 +7,23 @@
  * @flow
  */
 
-import type { Cache } from './ReactFiberCacheComponent.new';
-import type {
-  FiberRoot, TransitionTracingCallbacks
-} from './ReactInternalTypes';
-import type { RootTag } from './ReactRootTags';
+import type {FiberRoot, TransitionTracingCallbacks} from './ReactInternalTypes';
 
+import {enableCache, enableTransitionTracing} from 'shared/ReactFeatureFlags';
+import {createHostRootFiber} from './ReactFiber.new';
+import {initializeUpdateQueue} from './ReactFiberClassUpdateQueue.new';
+import {noTimeout} from './ReactFiberHostConfig';
 import {
-  enableCache, enableTransitionTracing
-} from 'shared/ReactFeatureFlags';
-import { createHostRootFiber } from './ReactFiber.new';
-import { createCache, retainCache } from './ReactFiberCacheComponent.new';
-import { initializeUpdateQueue } from './ReactFiberClassUpdateQueue.new';
-import { noTimeout } from './ReactFiberHostConfig';
-import {
-  createLaneMap, NoLane,
+  createLaneMap,
+  NoLane,
   NoLanes,
   NoTimestamp,
-  TotalLanes
+  TotalLanes,
 } from './ReactFiberLane.new';
+import {ConcurrentMode} from './ReactTypeOfMode';
 
 export type RootState = {
   element: any,
-  cache: Cache,
 };
 
 function FiberRootNode(
@@ -77,12 +71,10 @@ function FiberRootNode(
       transitionLanesMap.push(null);
     }
   }
-
 }
 
 export function createFiberRoot(
   containerInfo: any,
-  tag: RootTag,
   concurrentUpdatesByDefaultOverride: null | boolean,
   // TODO: We have several of these arguments that are conceptually part of the
   // host config, but because they are passed in at runtime, we have to thread
@@ -92,7 +84,7 @@ export function createFiberRoot(
 ): FiberRoot {
   const root: FiberRoot = (new FiberRootNode(
     containerInfo,
-    tag,
+    ConcurrentMode,
   ): any);
   if (enableTransitionTracing) {
     root.transitionCallbacks = transitionCallbacks;
@@ -101,37 +93,12 @@ export function createFiberRoot(
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
   const uninitializedFiber = createHostRootFiber(
-    tag,
     concurrentUpdatesByDefaultOverride,
   );
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
 
-  if (enableCache) {
-    const initialCache = createCache();
-    retainCache(initialCache);
-
-    // The pooledCache is a fresh cache instance that is used temporarily
-    // for newly mounted boundaries during a render. In general, the
-    // pooledCache is always cleared from the root at the end of a render:
-    // it is either released when render commits, or moved to an Offscreen
-    // component if rendering suspends. Because the lifetime of the pooled
-    // cache is distinct from the main memoizedState.cache, it must be
-    // retained separately.
-    root.pooledCache = initialCache;
-    retainCache(initialCache);
-    const initialState: RootState = {
-      element: null,
-      cache: initialCache,
-    };
-    uninitializedFiber.memoizedState = initialState;
-  } else {
-    const initialState: RootState = {
-      element: null,
-      cache: (null: any), // not enabled yet
-    };
-    uninitializedFiber.memoizedState = initialState;
-  }
+  uninitializedFiber.memoizedState = {element: null};
 
   initializeUpdateQueue(uninitializedFiber);
 

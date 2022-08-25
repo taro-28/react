@@ -7,180 +7,177 @@
  * @flow
  */
 
-import type {
-  Instance,
-  TextInstance,
-  SuspenseInstance,
-  Container,
-  ChildSet,
-  UpdatePayload,
-} from './ReactFiberHostConfig';
-import type {Fiber} from './ReactInternalTypes';
-import type {FiberRoot} from './ReactInternalTypes';
-import type {Lanes} from './ReactFiberLane.new';
-import type {SuspenseState} from './ReactFiberSuspenseComponent.new';
+import type {Wakeable} from 'shared/ReactTypes';
+import type {Cache} from './ReactFiberCacheComponent.new';
 import type {UpdateQueue} from './ReactFiberClassUpdateQueue.new';
 import type {FunctionComponentUpdateQueue} from './ReactFiberHooks.new';
-import type {Wakeable} from 'shared/ReactTypes';
 import type {
-  OffscreenState,
+  ChildSet,
+  Container,
+  Instance,
+  SuspenseInstance,
+  TextInstance,
+  UpdatePayload,
+} from './ReactFiberHostConfig';
+import type {Lanes} from './ReactFiberLane.new';
+import type {
   OffscreenInstance,
   OffscreenQueue,
+  OffscreenState,
 } from './ReactFiberOffscreenComponent';
-import type {HookFlags} from './ReactHookEffectTags';
-import type {Cache} from './ReactFiberCacheComponent.new';
-import type {RootState} from './ReactFiberRoot.new';
+import type {SuspenseState} from './ReactFiberSuspenseComponent.new';
 import type {Transition} from './ReactFiberTracingMarkerComponent.new';
+import type {HookFlags} from './ReactHookEffectTags';
+import type {Fiber, FiberRoot} from './ReactInternalTypes';
 
+import getComponentNameFromFiber from 'react-reconciler/src/getComponentNameFromFiber';
+import {clearCaughtError, invokeGuardedCallback} from 'shared/ReactErrorUtils';
 import {
+  deletedTreeCleanUpLevel,
+  enableCache,
   enableCreateEventHandleAPI,
-  enableProfilerTimer,
   enableProfilerCommitHooks,
   enableProfilerNestedUpdatePhase,
+  enableProfilerTimer,
   enableSchedulingProfiler,
-  enableSuspenseCallback,
   enableScopeAPI,
   enableStrictEffects,
-  deletedTreeCleanUpLevel,
-  enableUpdaterTracking,
-  enableCache,
+  enableSuspenseCallback,
   enableTransitionTracing,
+  enableUpdaterTracking,
 } from 'shared/ReactFeatureFlags';
 import {
-  FunctionComponent,
-  ForwardRef,
-  ClassComponent,
-  HostRoot,
-  HostComponent,
-  HostText,
-  HostPortal,
-  Profiler,
-  SuspenseComponent,
-  DehydratedFragment,
-  IncompleteClassComponent,
-  MemoComponent,
-  SimpleMemoComponent,
-  SuspenseListComponent,
-  ScopeComponent,
-  OffscreenComponent,
-  LegacyHiddenComponent,
-  CacheComponent,
-  TracingMarkerComponent,
-} from './ReactWorkTags';
-import {detachDeletedInstance} from './ReactFiberHostConfig';
-import {
-  NoFlags,
-  ContentReset,
-  Placement,
-  ChildDeletion,
-  Snapshot,
-  Update,
-  Callback,
-  Ref,
-  Hydrating,
-  Passive,
-  BeforeMutationMask,
-  MutationMask,
-  LayoutMask,
-  PassiveMask,
-  Visibility,
-} from './ReactFiberFlags';
-import getComponentNameFromFiber from 'react-reconciler/src/getComponentNameFromFiber';
-import {
+  getCurrentFiber as getCurrentDebugFiberInDEV,
   resetCurrentFiber as resetCurrentDebugFiberInDEV,
   setCurrentFiber as setCurrentDebugFiberInDEV,
-  getCurrentFiber as getCurrentDebugFiberInDEV,
 } from './ReactCurrentFiber';
-import {resolveDefaultProps} from './ReactFiberLazyComponent.new';
+import {didWarnAboutReassigningProps} from './ReactFiberBeginWork.new';
+import {releaseCache, retainCache} from './ReactFiberCacheComponent.new';
 import {
-  isCurrentUpdateNested,
-  getCommitTime,
-  recordLayoutEffectDuration,
-  startLayoutEffectTimer,
-  recordPassiveEffectDuration,
-  startPassiveEffectTimer,
-} from './ReactProfilerTimer.new';
-import {ConcurrentMode, NoMode, ProfileMode} from './ReactTypeOfMode';
-import {
-  deferHiddenCallbacks,
-  commitHiddenCallbacks,
   commitCallbacks,
+  commitHiddenCallbacks,
+  deferHiddenCallbacks,
 } from './ReactFiberClassUpdateQueue.new';
 import {
-  getPublicInstance,
-  supportsMutation,
-  supportsPersistence,
-  supportsHydration,
-  commitMount,
-  commitUpdate,
-  resetTextContent,
-  commitTextUpdate,
-  appendChild,
-  appendChildToContainer,
-  insertBefore,
-  insertInContainerBefore,
-  removeChild,
-  removeChildFromContainer,
-  clearSuspenseBoundary,
-  clearSuspenseBoundaryFromContainer,
-  replaceContainerChildren,
-  createContainerChildSet,
-  hideInstance,
-  hideTextInstance,
-  unhideInstance,
-  unhideTextInstance,
-  commitHydratedContainer,
-  commitHydratedSuspenseInstance,
-  clearContainer,
-  prepareScopeUpdate,
-  prepareForCommit,
-  beforeActiveInstanceBlur,
-} from './ReactFiberHostConfig';
-import {
-  captureCommitPhaseError,
-  resolveRetryWakeable,
-  markCommitTimeOfFallback,
-  enqueuePendingPassiveProfilerEffect,
-  restorePendingUpdaters,
-  addTransitionStartCallbackToPendingTransition,
-  addTransitionProgressCallbackToPendingTransition,
-  addTransitionCompleteCallbackToPendingTransition,
-  addMarkerProgressCallbackToPendingTransition,
-  addMarkerCompleteCallbackToPendingTransition,
-  setIsRunningInsertionEffect,
-} from './ReactFiberWorkLoop.new';
-import {
-  NoFlags as NoHookEffect,
-  HasEffect as HookHasEffect,
-  Layout as HookLayout,
-  Insertion as HookInsertion,
-  Passive as HookPassive,
-} from './ReactHookEffectTags';
-import {didWarnAboutReassigningProps} from './ReactFiberBeginWork.new';
-import {doesFiberContain} from './ReactFiberTreeReflection';
-import {invokeGuardedCallback, clearCaughtError} from 'shared/ReactErrorUtils';
-import {
   isDevToolsPresent,
-  markComponentPassiveEffectMountStarted,
-  markComponentPassiveEffectMountStopped,
-  markComponentPassiveEffectUnmountStarted,
-  markComponentPassiveEffectUnmountStopped,
   markComponentLayoutEffectMountStarted,
   markComponentLayoutEffectMountStopped,
   markComponentLayoutEffectUnmountStarted,
   markComponentLayoutEffectUnmountStopped,
+  markComponentPassiveEffectMountStarted,
+  markComponentPassiveEffectMountStopped,
+  markComponentPassiveEffectUnmountStarted,
+  markComponentPassiveEffectUnmountStopped,
   onCommitUnmount,
 } from './ReactFiberDevToolsHook.new';
-import {releaseCache, retainCache} from './ReactFiberCacheComponent.new';
-import {clearTransitionsForLanes} from './ReactFiberLane.new';
 import {
-  OffscreenVisible,
+  BeforeMutationMask,
+  Callback,
+  ChildDeletion,
+  ContentReset,
+  Hydrating,
+  LayoutMask,
+  MutationMask,
+  NoFlags,
+  Passive,
+  PassiveMask,
+  Placement,
+  Ref,
+  Snapshot,
+  Update,
+  Visibility,
+} from './ReactFiberFlags';
+import {
+  appendChild,
+  appendChildToContainer,
+  beforeActiveInstanceBlur,
+  clearContainer,
+  clearSuspenseBoundary,
+  clearSuspenseBoundaryFromContainer,
+  commitHydratedSuspenseInstance,
+  commitMount,
+  commitTextUpdate,
+  commitUpdate,
+  createContainerChildSet,
+  detachDeletedInstance,
+  getPublicInstance,
+  hideInstance,
+  hideTextInstance,
+  insertBefore,
+  insertInContainerBefore,
+  prepareForCommit,
+  prepareScopeUpdate,
+  removeChild,
+  removeChildFromContainer,
+  replaceContainerChildren,
+  resetTextContent,
+  supportsHydration,
+  supportsMutation,
+  supportsPersistence,
+  unhideInstance,
+  unhideTextInstance,
+} from './ReactFiberHostConfig';
+import {clearTransitionsForLanes} from './ReactFiberLane.new';
+import {resolveDefaultProps} from './ReactFiberLazyComponent.new';
+import {
   OffscreenPassiveEffectsConnected,
+  OffscreenVisible,
 } from './ReactFiberOffscreenComponent';
 import {
   TransitionRoot,
   TransitionTracingMarker,
 } from './ReactFiberTracingMarkerComponent.new';
+import {doesFiberContain} from './ReactFiberTreeReflection';
+import {
+  addMarkerCompleteCallbackToPendingTransition,
+  addMarkerProgressCallbackToPendingTransition,
+  addTransitionCompleteCallbackToPendingTransition,
+  addTransitionProgressCallbackToPendingTransition,
+  addTransitionStartCallbackToPendingTransition,
+  captureCommitPhaseError,
+  enqueuePendingPassiveProfilerEffect,
+  markCommitTimeOfFallback,
+  resolveRetryWakeable,
+  restorePendingUpdaters,
+  setIsRunningInsertionEffect,
+} from './ReactFiberWorkLoop.new';
+import {
+  HasEffect as HookHasEffect,
+  Insertion as HookInsertion,
+  Layout as HookLayout,
+  NoFlags as NoHookEffect,
+  Passive as HookPassive,
+} from './ReactHookEffectTags';
+import {
+  getCommitTime,
+  isCurrentUpdateNested,
+  recordLayoutEffectDuration,
+  recordPassiveEffectDuration,
+  startLayoutEffectTimer,
+  startPassiveEffectTimer,
+} from './ReactProfilerTimer.new';
+import {ConcurrentMode, NoMode, ProfileMode} from './ReactTypeOfMode';
+import {
+  CacheComponent,
+  ClassComponent,
+  DehydratedFragment,
+  ForwardRef,
+  FunctionComponent,
+  HostComponent,
+  HostPortal,
+  HostRoot,
+  HostText,
+  IncompleteClassComponent,
+  LegacyHiddenComponent,
+  MemoComponent,
+  OffscreenComponent,
+  Profiler,
+  ScopeComponent,
+  SimpleMemoComponent,
+  SuspenseComponent,
+  SuspenseListComponent,
+  TracingMarkerComponent,
+} from './ReactWorkTags';
 
 let didWarnAboutUndefinedSnapshotBeforeUpdate: Set<mixed> | null = null;
 if (__DEV__) {
@@ -358,13 +355,11 @@ function commitBeforeMutationEffects_begin() {
 function commitBeforeMutationEffects_complete() {
   while (nextEffect !== null) {
     const fiber = nextEffect;
-    setCurrentDebugFiberInDEV(fiber);
     try {
       commitBeforeMutationEffectsOnFiber(fiber);
     } catch (error) {
       captureCommitPhaseError(fiber, fiber.return, error);
     }
-    resetCurrentDebugFiberInDEV();
 
     const sibling = fiber.sibling;
     if (sibling !== null) {
@@ -2160,9 +2155,7 @@ export function commitMutationEffects(
   inProgressLanes = committedLanes;
   inProgressRoot = root;
 
-  setCurrentDebugFiberInDEV(finishedWork);
   commitMutationEffectsOnFiber(finishedWork, root, committedLanes);
-  setCurrentDebugFiberInDEV(finishedWork);
 
   inProgressLanes = null;
   inProgressRoot = null;
@@ -2384,22 +2377,6 @@ function commitMutationEffectsOnFiber(
       commitReconciliationEffects(finishedWork);
 
       if (flags & Update) {
-        if (supportsMutation && supportsHydration) {
-          if (current !== null) {
-            const prevRootState: RootState = current.memoizedState;
-            if (prevRootState.isDehydrated) {
-              try {
-                commitHydratedContainer(root.containerInfo);
-              } catch (error) {
-                captureCommitPhaseError(
-                  finishedWork,
-                  finishedWork.return,
-                  error,
-                );
-              }
-            }
-          }
-        }
         if (supportsPersistence) {
           const containerInfo = root.containerInfo;
           const pendingChildren = root.pendingChildren;
@@ -3039,14 +3016,12 @@ export function commitPassiveMountEffects(
   committedLanes: Lanes,
   committedTransitions: Array<Transition> | null,
 ): void {
-  setCurrentDebugFiberInDEV(finishedWork);
   commitPassiveMountOnFiber(
     root,
     finishedWork,
     committedLanes,
     committedTransitions,
   );
-  resetCurrentDebugFiberInDEV();
 }
 
 function recursivelyTraversePassiveMountEffects(

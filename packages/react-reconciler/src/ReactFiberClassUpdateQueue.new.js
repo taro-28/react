@@ -84,33 +84,43 @@
 // regardless of priority. Intermediate state may vary according to system
 // resources, but the final state is always the same.
 
-import type { Lane, Lanes } from './ReactFiberLane.new';
-import type { Fiber, FiberRoot } from './ReactInternalTypes';
+import type {Lane, Lanes} from './ReactFiberLane.new';
+import type {Fiber, FiberRoot} from './ReactInternalTypes';
 
 import {
-  Callback, DidCapture, ShouldCapture, Visibility
+  Callback,
+  DidCapture,
+  ShouldCapture,
+  Visibility,
 } from './ReactFiberFlags';
 import {
-  intersectLanes, isSubsetOfLanes, isTransitionLane, markRootEntangled, mergeLanes, NoLane,
+  intersectLanes,
+  isSubsetOfLanes,
+  isTransitionLane,
+  markRootEntangled,
+  mergeLanes,
+  NoLane,
   NoLanes,
-  OffscreenLane, removeLanes
+  OffscreenLane,
+  removeLanes,
 } from './ReactFiberLane.new';
 import {
   enterDisallowedContextReadInDEV,
-  exitDisallowedContextReadInDEV
+  exitDisallowedContextReadInDEV,
 } from './ReactFiberNewContext.new';
 
-import { debugRenderPhaseSideEffectsForStrictMode } from 'shared/ReactFeatureFlags';
+import {debugRenderPhaseSideEffectsForStrictMode} from 'shared/ReactFeatureFlags';
 
 import {
   enqueueConcurrentClassUpdate,
-  unsafe_markUpdateLaneFromFiberToRoot
+  unsafe_markUpdateLaneFromFiberToRoot,
 } from './ReactFiberConcurrentUpdates.new';
-import { setIsStrictModeForDevtools } from './ReactFiberDevToolsHook.new';
+import {setIsStrictModeForDevtools} from './ReactFiberDevToolsHook.new';
 import {
-  getWorkInProgressRootRenderLanes, isUnsafeClassRenderPhaseUpdate
+  getWorkInProgressRootRenderLanes,
+  isUnsafeClassRenderPhaseUpdate,
 } from './ReactFiberWorkLoop.new';
-import { StrictLegacyMode } from './ReactTypeOfMode';
+import {StrictLegacyMode} from './ReactTypeOfMode';
 
 import assign from 'shared/assign';
 
@@ -151,16 +161,8 @@ export const CaptureUpdate = 3;
 // `checkHasForceUpdateAfterProcessing`.
 let hasForceUpdate = false;
 
-let didWarnUpdateInsideUpdate;
 let currentlyProcessingQueue;
 export let resetCurrentlyProcessingQueue;
-if (__DEV__) {
-  didWarnUpdateInsideUpdate = false;
-  currentlyProcessingQueue = null;
-  resetCurrentlyProcessingQueue = () => {
-    currentlyProcessingQueue = null;
-  };
-}
 
 export function initializeUpdateQueue<State>(fiber: Fiber): void {
   const queue: UpdateQueue<State> = {
@@ -449,10 +451,6 @@ export function processUpdateQueue<State>(
 
   hasForceUpdate = false;
 
-  if (__DEV__) {
-    currentlyProcessingQueue = queue.shared;
-  }
-
   let firstBaseUpdate = queue.firstBaseUpdate;
   let lastBaseUpdate = queue.lastBaseUpdate;
 
@@ -637,10 +635,6 @@ export function processUpdateQueue<State>(
     markSkippedUpdateLanes(newLanes);
     workInProgress.lanes = newLanes;
     workInProgress.memoizedState = newState;
-  }
-
-  if (__DEV__) {
-    currentlyProcessingQueue = null;
   }
 }
 
