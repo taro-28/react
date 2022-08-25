@@ -7,96 +7,160 @@
  * @flow
  */
 
-import type { Wakeable } from 'shared/ReactTypes';
-import type { EventPriority } from './ReactEventPriorities.new';
-import type { FunctionComponentUpdateQueue } from './ReactFiberHooks.new';
-import type { Lane, Lanes } from './ReactFiberLane.new';
-import type { OffscreenInstance } from './ReactFiberOffscreenComponent';
-import type { SuspenseState } from './ReactFiberSuspenseComponent.new';
+import type {Wakeable} from 'shared/ReactTypes';
+import type {EventPriority} from './ReactEventPriorities.new';
+import type {FunctionComponentUpdateQueue} from './ReactFiberHooks.new';
+import type {Lane, Lanes} from './ReactFiberLane.new';
+import type {OffscreenInstance} from './ReactFiberOffscreenComponent';
+import type {SuspenseState} from './ReactFiberSuspenseComponent.new';
 import type {
-  PendingBoundaries, PendingTransitionCallbacks, Transition
+  PendingBoundaries,
+  PendingTransitionCallbacks,
+  Transition,
 } from './ReactFiberTracingMarkerComponent.new';
-import type { Fiber, FiberRoot } from './ReactInternalTypes';
+import type {Fiber, FiberRoot} from './ReactInternalTypes';
 
 import is from 'shared/objectIs';
 import {
-  deferRenderPhaseUpdateToNextBatch, disableSchedulerTimeoutInWorkLoop, enableCache, enableCreateEventHandleAPI, enableTransitionTracing, skipUnmountedBoundaries
+  deferRenderPhaseUpdateToNextBatch,
+  disableSchedulerTimeoutInWorkLoop,
+  enableCache,
+  enableCreateEventHandleAPI,
+  enableTransitionTracing,
+  skipUnmountedBoundaries,
 } from 'shared/ReactFeatureFlags';
 import ReactSharedInternals from 'shared/ReactSharedInternals';
 
 import {
   flushSyncCallbacks,
-  flushSyncCallbacksOnlyInLegacyMode, scheduleLegacySyncCallback, scheduleSyncCallback
+  flushSyncCallbacksOnlyInLegacyMode,
+  scheduleLegacySyncCallback,
+  scheduleSyncCallback,
 } from './ReactFiberSyncTaskQueue.new';
 import {
-  cancelCallback as Scheduler_cancelCallback, IdlePriority as IdleSchedulerPriority, ImmediatePriority as ImmediateSchedulerPriority, NormalPriority as NormalSchedulerPriority, now, requestPaint, scheduleCallback as Scheduler_scheduleCallback, shouldYield, UserBlockingPriority as UserBlockingSchedulerPriority
+  cancelCallback as Scheduler_cancelCallback,
+  IdlePriority as IdleSchedulerPriority,
+  ImmediatePriority as ImmediateSchedulerPriority,
+  NormalPriority as NormalSchedulerPriority,
+  now,
+  requestPaint,
+  scheduleCallback as Scheduler_scheduleCallback,
+  shouldYield,
+  UserBlockingPriority as UserBlockingSchedulerPriority,
 } from './Scheduler';
 
 import {
-  afterActiveInstanceBlur, cancelTimeout, getCurrentEventPriority, noTimeout, resetAfterCommit, scheduleMicrotask, scheduleTimeout, supportsMicrotasks
+  afterActiveInstanceBlur,
+  cancelTimeout,
+  getCurrentEventPriority,
+  noTimeout,
+  resetAfterCommit,
+  scheduleMicrotask,
+  scheduleTimeout,
+  supportsMicrotasks,
 } from './ReactFiberHostConfig';
 
 import {
   createCapturedValueAtFiber,
-  type CapturedValue
+  type CapturedValue,
 } from './ReactCapturedValue';
 import {
   ContinuousEventPriority,
-  DefaultEventPriority, DiscreteEventPriority, getCurrentUpdatePriority, IdleEventPriority, lanesToEventPriority, lowerEventPriority, setCurrentUpdatePriority
+  DefaultEventPriority,
+  DiscreteEventPriority,
+  getCurrentUpdatePriority,
+  IdleEventPriority,
+  lanesToEventPriority,
+  lowerEventPriority,
+  setCurrentUpdatePriority,
 } from './ReactEventPriorities.new';
-import { createWorkInProgress, resetWorkInProgress } from './ReactFiber.new';
-import { beginWork as originalBeginWork } from './ReactFiberBeginWork.new';
-import { enqueueUpdate } from './ReactFiberClassUpdateQueue.new';
+import {createWorkInProgress, resetWorkInProgress} from './ReactFiber.new';
+import {beginWork as originalBeginWork} from './ReactFiberBeginWork.new';
+import {enqueueUpdate} from './ReactFiberClassUpdateQueue.new';
 import {
   commitBeforeMutationEffects,
   commitLayoutEffects,
-  commitMutationEffects, commitPassiveMountEffects,
-  commitPassiveUnmountEffects
+  commitMutationEffects,
+  commitPassiveMountEffects,
+  commitPassiveUnmountEffects,
 } from './ReactFiberCommitWork.new';
-import { completeWork } from './ReactFiberCompleteWork.new';
+import {completeWork} from './ReactFiberCompleteWork.new';
 import {
   enqueueConcurrentRenderForLane,
   finishQueueingConcurrentUpdates,
-  getConcurrentlyUpdatedLanes
+  getConcurrentlyUpdatedLanes,
 } from './ReactFiberConcurrentUpdates.new';
 import {
-  BeforeMutationMask, ForceClientRender, HostEffectMask, Incomplete, LayoutMask, MutationMask, NoFlags, PassiveMask, StoreConsistency
+  BeforeMutationMask,
+  ForceClientRender,
+  HostEffectMask,
+  Incomplete,
+  LayoutMask,
+  MutationMask,
+  NoFlags,
+  PassiveMask,
+  StoreConsistency,
 } from './ReactFiberFlags';
 import {
-  ContextOnlyDispatcher, resetHooksAfterThrow
+  ContextOnlyDispatcher,
+  resetHooksAfterThrow,
 } from './ReactFiberHooks.new';
 import {
-  claimNextRetryLane, claimNextTransitionLane, getHighestPriorityLane, getLanesToRetrySynchronouslyOnError,
-  getMostRecentEventTime, getNextLanes, getTransitionsForLanes, includesBlockingLane,
-  includesExpiredLane, includesNonIdleWork,
+  claimNextRetryLane,
+  claimNextTransitionLane,
+  getHighestPriorityLane,
+  getLanesToRetrySynchronouslyOnError,
+  getNextLanes,
+  getTransitionsForLanes,
+  includesBlockingLane,
+  includesExpiredLane,
+  includesNonIdleWork,
   includesOnlyRetries,
-  includesOnlyTransitions, includesSomeLane,
-  isSubsetOfLanes, markRootEntangled,
-  markRootFinished, markRootPinged, markRootSuspended as markRootSuspended_dontCallThisOneDirectly, markRootUpdated, markStarvedLanesAsExpired, mergeLanes, NoLane, NoLanes, NoTimestamp, pickArbitraryLane, removeLanes, SyncLane
+  includesOnlyTransitions,
+  includesSomeLane,
+  isSubsetOfLanes,
+  markRootEntangled,
+  markRootFinished,
+  markRootPinged,
+  markRootSuspended as markRootSuspended_dontCallThisOneDirectly,
+  markRootUpdated,
+  markStarvedLanesAsExpired,
+  mergeLanes,
+  NoLane,
+  NoLanes,
+  NoTimestamp,
+  pickArbitraryLane,
+  removeLanes,
+  SyncLane,
 } from './ReactFiberLane.new';
-import { resetContextDependencies } from './ReactFiberNewContext.new';
-import { isRootDehydrated } from './ReactFiberShellHydration';
+import {resetContextDependencies} from './ReactFiberNewContext.new';
+import {isRootDehydrated} from './ReactFiberShellHydration';
 import {
-  createClassErrorUpdate, createRootErrorUpdate, throwException
+  createClassErrorUpdate,
+  createRootErrorUpdate,
+  throwException,
 } from './ReactFiberThrow.new';
-import { NoTransition, requestCurrentTransition } from './ReactFiberTransition';
-import { unwindInterruptedWork, unwindWork } from './ReactFiberUnwindWork.new';
-import { LegacyRoot } from './ReactRootTags';
-import { ConcurrentMode, NoMode } from './ReactTypeOfMode';
+import {NoTransition, requestCurrentTransition} from './ReactFiberTransition';
+import {unwindInterruptedWork, unwindWork} from './ReactFiberUnwindWork.new';
+import {LegacyRoot} from './ReactRootTags';
+import {ConcurrentMode, NoMode} from './ReactTypeOfMode';
 import {
-  ClassComponent, HostRoot, OffscreenComponent, SuspenseComponent,
-  SuspenseListComponent
+  ClassComponent,
+  HostRoot,
+  OffscreenComponent,
+  SuspenseComponent,
+  SuspenseListComponent,
 } from './ReactWorkTags';
 
-
 // DEV stuff
-import { releaseCache } from './ReactFiberCacheComponent.new';
-import { processTransitionCallbacks } from './ReactFiberTracingMarkerComponent.new';
+import {releaseCache} from './ReactFiberCacheComponent.new';
+import {processTransitionCallbacks} from './ReactFiberTracingMarkerComponent.new';
 import {
-  attemptToPingSuspendedWakeable, resetWakeableState, suspendedWakeableWasPinged, trackSuspendedWakeable
+  attemptToPingSuspendedWakeable,
+  resetWakeableState,
+  suspendedWakeableWasPinged,
+  trackSuspendedWakeable,
 } from './ReactFiberWakeable.new';
-
-const ceil = Math.ceil;
 
 const {
   ReactCurrentDispatcher,
@@ -323,14 +387,9 @@ let hasUncaughtError = false;
 let firstUncaughtError = null;
 let legacyErrorBoundariesThatAlreadyFailed: Set<mixed> | null = null;
 
-// Only used when enableProfilerNestedUpdateScheduledHook is true;
-// to track which root is currently committing layout effects.
-let rootCommittingMutationOrLayoutEffects: FiberRoot | null = null;
-
 let rootDoesHavePassiveEffects: boolean = false;
 let rootWithPendingPassiveEffects: FiberRoot | null = null;
 let pendingPassiveEffectsLanes: Lanes = NoLanes;
-let pendingPassiveProfilerEffects: Array<Fiber> = [];
 let pendingPassiveEffectsRemainingLanes: Lanes = NoLanes;
 let pendingPassiveTransitions: Array<Transition> | null = null;
 
@@ -338,20 +397,12 @@ let pendingPassiveTransitions: Array<Transition> | null = null;
 const NESTED_UPDATE_LIMIT = 50;
 let nestedUpdateCount: number = 0;
 let rootWithNestedUpdates: FiberRoot | null = null;
-let isFlushingPassiveEffects = false;
-let didScheduleUpdateDuringPassiveEffects = false;
-
-const NESTED_PASSIVE_UPDATE_LIMIT = 50;
-let nestedPassiveUpdateCount: number = 0;
-let rootWithPassiveNestedUpdates: FiberRoot | null = null;
 
 // If two updates are scheduled within the same event, we should treat their
 // event times as simultaneous, even if the actual clock time has advanced
 // between the first and second call.
 let currentEventTime: number = NoTimestamp;
 let currentEventTransitionLane: Lanes = NoLanes;
-
-let isRunningInsertionEffect = false;
 
 export function getWorkInProgressRoot(): FiberRoot | null {
   return workInProgressRoot;
@@ -504,7 +555,7 @@ export function scheduleUpdateOnFiber(
       executionContext === NoContext &&
       (fiber.mode & ConcurrentMode) === NoMode &&
       // Treat `act` as if it's inside `batchedUpdates`, even in legacy mode.
-      !(ReactCurrentActQueue.isBatchingLegacy)
+      !ReactCurrentActQueue.isBatchingLegacy
     ) {
       // Flush the synchronous work now, unless we're already working or inside
       // a batch. This is intentionally inside scheduleUpdateOnFiber instead of
@@ -566,10 +617,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     // Special case related to `act`. If the currently scheduled task is a
     // Scheduler task, rather than an `act` task, cancel it and re-scheduled
     // on the `act` queue.
-    !(
-      ReactCurrentActQueue.current !== null &&
-      existingCallbackNode !== fakeActCallbackNode
-    )
+    !(ReactCurrentActQueue.current !== null)
   ) {
     // The priority hasn't changed. We can reuse the existing task. Exit.
     return;
@@ -911,36 +959,6 @@ function finishConcurrentRender(root, exitStatus, lanes) {
         break;
       }
 
-      if (!shouldForceFlushFallbacksInDEV()) {
-        // This is not a transition, but we did trigger an avoided state.
-        // Schedule a placeholder to display after a short delay, using the Just
-        // Noticeable Difference.
-        // TODO: Is the JND optimization worth the added complexity? If this is
-        // the only reason we track the event time, then probably not.
-        // Consider removing.
-
-        const mostRecentEventTime = getMostRecentEventTime(root, lanes);
-        const eventTimeMs = mostRecentEventTime;
-        const timeElapsedMs = now() - eventTimeMs;
-        const msUntilTimeout = jnd(timeElapsedMs) - timeElapsedMs;
-
-        // Don't bother with a very short suspense time.
-        if (msUntilTimeout > 10) {
-          // Instead of committing the fallback immediately, wait for more data
-          // to arrive.
-          root.timeoutHandle = scheduleTimeout(
-            commitRoot.bind(
-              null,
-              root,
-              workInProgressRootRecoverableErrors,
-              workInProgressTransitions,
-            ),
-            msUntilTimeout,
-          );
-          break;
-        }
-      }
-
       // Commit the placeholder.
       commitRoot(
         root,
@@ -1129,7 +1147,7 @@ export function batchedUpdates<A, R>(fn: A => R, a: A): R {
     if (
       executionContext === NoContext &&
       // Treat `act` as if it's inside `batchedUpdates`, even in legacy mode.
-      !(ReactCurrentActQueue.isBatchingLegacy)
+      !ReactCurrentActQueue.isBatchingLegacy
     ) {
       resetRenderTimer();
       flushSyncCallbacksOnlyInLegacyMode();
@@ -1207,9 +1225,7 @@ export function flushSync(fn) {
 export function isAlreadyRendering() {
   // Used by the renderer to print a warning if certain APIs are called from
   // the wrong context.
-  return (
-    (executionContext & (RenderContext | CommitContext)) !== NoContext
-  );
+  return (executionContext & (RenderContext | CommitContext)) !== NoContext;
 }
 
 export function flushControlled(fn: () => mixed): void {
@@ -1494,7 +1510,6 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
   // If the root or lanes have changed, throw out the existing stack
   // and prepare a fresh one. Otherwise we'll continue where we left off.
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
-
     workInProgressTransitions = getTransitionsForLanes(root, lanes);
     resetRenderTimer();
     prepareFreshStack(root, lanes);
@@ -1553,7 +1568,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   // nothing should rely on this, but relying on it here means that we don't
   // need an additional field on the work in progress.
   const current = unitOfWork.alternate;
-  let next = beginWork(current, unitOfWork, renderLanes);
+  const next = beginWork(current, unitOfWork, renderLanes);
 
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   if (next === null) {
@@ -1588,8 +1603,7 @@ function resumeSuspendedUnitOfWork(unitOfWork: Fiber): void {
 
   const current = unitOfWork.alternate;
 
-  let next;
-  next = beginWork(current, unitOfWork, renderLanes);
+  const next = beginWork(current, unitOfWork, renderLanes);
 
   // The begin phase finished successfully without suspending. Reset the state
   // used to track the fiber while it was suspended. Then return to the normal
@@ -1621,8 +1635,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
 
     // Check if the work completed or if something threw.
     if ((completedWork.flags & Incomplete) === NoFlags) {
-      let next;
-      next = completeWork(current, completedWork, renderLanes);
+      const next = completeWork(current, completedWork, renderLanes);
 
       if (next !== null) {
         // Completing this fiber spawned new work. Work on that next.
@@ -1855,7 +1868,7 @@ function commitRootImpl(
     // the host tree after it's been mutated. The idiomatic use case for this is
     // layout, but class component lifecycles also fire here for legacy reasons.
     commitLayoutEffects(finishedWork, root, lanes);
-    
+
     // Tell Scheduler to yield at the end of the frame, so the browser has an
     // opportunity to paint.
     requestPaint();
@@ -1869,8 +1882,6 @@ function commitRootImpl(
     // No effects.
     root.current = finishedWork;
   }
-
-  const rootDidHavePassiveEffects = rootDoesHavePassiveEffects;
 
   if (rootDoesHavePassiveEffects) {
     // This commit has passive effects. Stash a reference to them. But don't
@@ -2284,37 +2295,10 @@ export function resolveRetryWakeable(boundaryFiber: Fiber, wakeable: Wakeable) {
   retryTimedOutBoundary(boundaryFiber, retryLane);
 }
 
-// Computes the next Just Noticeable Difference (JND) boundary.
-// The theory is that a person can't tell the difference between small differences in time.
-// Therefore, if we wait a bit longer than necessary that won't translate to a noticeable
-// difference in the experience. However, waiting for longer might mean that we can avoid
-// showing an intermediate loading state. The longer we have already waited, the harder it
-// is to tell small differences in time. Therefore, the longer we've already waited,
-// the longer we can wait additionally. At some point we have to give up though.
-// We pick a train model where the next boundary commits at a consistent schedule.
-// These particular numbers are vague estimates. We expect to adjust them based on research.
-function jnd(timeElapsed: number) {
-  return timeElapsed < 120
-    ? 120
-    : timeElapsed < 480
-    ? 480
-    : timeElapsed < 1080
-    ? 1080
-    : timeElapsed < 1920
-    ? 1920
-    : timeElapsed < 3000
-    ? 3000
-    : timeElapsed < 4320
-    ? 4320
-    : ceil(timeElapsed / 1960) * 1960;
-}
-
 export function throwIfInfiniteUpdateLoopDetected() {
   if (nestedUpdateCount > NESTED_UPDATE_LIMIT) {
     nestedUpdateCount = 0;
-    nestedPassiveUpdateCount = 0;
     rootWithNestedUpdates = null;
-    rootWithPassiveNestedUpdates = null;
 
     throw new Error(
       'Maximum update depth exceeded. This can happen when a component ' +
@@ -2325,13 +2309,8 @@ export function throwIfInfiniteUpdateLoopDetected() {
   }
 }
 
-let beginWork;
-beginWork = originalBeginWork;
+const beginWork = originalBeginWork;
 
-
-export function restorePendingUpdaters(root: FiberRoot, lanes: Lanes): void {}
-
-const fakeActCallbackNode = {};
 function scheduleCallback(priorityLevel, callback) {
   // In production, always call Scheduler. This function will be stripped out.
   return Scheduler_scheduleCallback(priorityLevel, callback);
@@ -2341,5 +2320,3 @@ function cancelCallback(callbackNode) {
   // In production, always call Scheduler. This function will be stripped out.
   return Scheduler_cancelCallback(callbackNode);
 }
-
-export function setIsRunningInsertionEffect(isRunning: boolean): void {}

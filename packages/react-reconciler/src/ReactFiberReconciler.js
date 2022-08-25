@@ -7,7 +7,7 @@
  * @flow
  */
 
-import { enableNewReconciler } from 'shared/ReactFeatureFlags';
+import {enableNewReconciler} from 'shared/ReactFeatureFlags';
 
 // The entry file imports either the old or new version of the reconciler.
 // During build and testing, this indirection is always shimmed with the actual
@@ -15,21 +15,65 @@ import { enableNewReconciler } from 'shared/ReactFeatureFlags';
 // only here for Flow purposes.
 
 import {
-  batchedUpdates as batchedUpdates_old, createComponentSelector as createComponentSelector_old, createContainer as createContainer_old, createHasPseudoClassSelector as createHasPseudoClassSelector_old, createPortal as createPortal_old, createRoleSelector as createRoleSelector_old,
+  batchedUpdates as batchedUpdates_old,
+  createComponentSelector as createComponentSelector_old,
+  createContainer as createContainer_old,
+  createHasPseudoClassSelector as createHasPseudoClassSelector_old,
+  createPortal as createPortal_old,
+  createRoleSelector as createRoleSelector_old,
   createTestNameSelector as createTestNameSelector_old,
-  createTextSelector as createTextSelector_old, deferredUpdates as deferredUpdates_old,
-  discreteUpdates as discreteUpdates_old, findAllNodes as findAllNodes_old,
-  findBoundingRects as findBoundingRects_old, findHostInstance as findHostInstance_old, findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_old, findHostInstanceWithWarning as findHostInstanceWithWarning_old, flushControlled as flushControlled_old, flushPassiveEffects as flushPassiveEffects_old, flushSync as flushSync_old, focusWithin as focusWithin_old, getCurrentUpdatePriority as getCurrentUpdatePriority_old, getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_old, getPublicRootInstance as getPublicRootInstance_old, injectIntoDevTools as injectIntoDevTools_old, isAlreadyRendering as isAlreadyRendering_old, observeVisibleRects as observeVisibleRects_old, runWithPriority as runWithPriority_old, shouldError as shouldError_old,
-  shouldSuspend as shouldSuspend_old, updateContainer as updateContainer_old
+  createTextSelector as createTextSelector_old,
+  deferredUpdates as deferredUpdates_old,
+  discreteUpdates as discreteUpdates_old,
+  findAllNodes as findAllNodes_old,
+  findBoundingRects as findBoundingRects_old,
+  findHostInstance as findHostInstance_old,
+  findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_old,
+  findHostInstanceWithWarning as findHostInstanceWithWarning_old,
+  flushControlled as flushControlled_old,
+  flushPassiveEffects as flushPassiveEffects_old,
+  flushSync as flushSync_old,
+  focusWithin as focusWithin_old,
+  getCurrentUpdatePriority as getCurrentUpdatePriority_old,
+  getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_old,
+  getPublicRootInstance as getPublicRootInstance_old,
+  isAlreadyRendering as isAlreadyRendering_old,
+  observeVisibleRects as observeVisibleRects_old,
+  runWithPriority as runWithPriority_old,
+  shouldError as shouldError_old,
+  shouldSuspend as shouldSuspend_old,
+  updateContainer as updateContainer_old,
 } from './ReactFiberReconciler.old';
 
 import {
-  batchedUpdates as batchedUpdates_new, createComponentSelector as createComponentSelector_new, createContainer as createContainer_new, createHasPseudoClassSelector as createHasPseudoClassSelector_new, createPortal as createPortal_new, createRoleSelector as createRoleSelector_new,
+  batchedUpdates as batchedUpdates_new,
+  createComponentSelector as createComponentSelector_new,
+  createContainer as createContainer_new,
+  createHasPseudoClassSelector as createHasPseudoClassSelector_new,
+  createPortal as createPortal_new,
+  createRoleSelector as createRoleSelector_new,
   createTestNameSelector as createTestNameSelector_new,
-  createTextSelector as createTextSelector_new, deferredUpdates as deferredUpdates_new,
-  discreteUpdates as discreteUpdates_new, findAllNodes as findAllNodes_new,
-  findBoundingRects as findBoundingRects_new, findHostInstance as findHostInstance_new, findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_new, findHostInstanceWithWarning as findHostInstanceWithWarning_new, flushControlled as flushControlled_new, flushPassiveEffects as flushPassiveEffects_new, flushSync as flushSync_new, focusWithin as focusWithin_new, getCurrentUpdatePriority as getCurrentUpdatePriority_new, getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_new, getPublicRootInstance as getPublicRootInstance_new, injectIntoDevTools as injectIntoDevTools_new, isAlreadyRendering as isAlreadyRendering_new, observeVisibleRects as observeVisibleRects_new, runWithPriority as runWithPriority_new, shouldError as shouldError_new,
-  shouldSuspend as shouldSuspend_new, updateContainer as updateContainer_new
+  createTextSelector as createTextSelector_new,
+  deferredUpdates as deferredUpdates_new,
+  discreteUpdates as discreteUpdates_new,
+  findAllNodes as findAllNodes_new,
+  findBoundingRects as findBoundingRects_new,
+  findHostInstance as findHostInstance_new,
+  findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_new,
+  findHostInstanceWithWarning as findHostInstanceWithWarning_new,
+  flushControlled as flushControlled_new,
+  flushPassiveEffects as flushPassiveEffects_new,
+  flushSync as flushSync_new,
+  focusWithin as focusWithin_new,
+  getCurrentUpdatePriority as getCurrentUpdatePriority_new,
+  getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_new,
+  getPublicRootInstance as getPublicRootInstance_new,
+  isAlreadyRendering as isAlreadyRendering_new,
+  observeVisibleRects as observeVisibleRects_new,
+  runWithPriority as runWithPriority_new,
+  shouldError as shouldError_new,
+  shouldSuspend as shouldSuspend_new,
+  updateContainer as updateContainer_new,
 } from './ReactFiberReconciler.new';
 
 export const createContainer = enableNewReconciler
@@ -78,9 +122,6 @@ export const shouldError = enableNewReconciler
 export const shouldSuspend = enableNewReconciler
   ? shouldSuspend_new
   : shouldSuspend_old;
-export const injectIntoDevTools = enableNewReconciler
-  ? injectIntoDevTools_new
-  : injectIntoDevTools_old;
 export const createPortal = enableNewReconciler
   ? createPortal_new
   : createPortal_old;

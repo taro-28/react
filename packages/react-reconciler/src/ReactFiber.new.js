@@ -7,45 +7,82 @@
  * @flow
  */
 
-import type { ReactElement } from 'shared/ReactElementType';
-import type { ReactFragment, ReactPortal, ReactScope } from 'shared/ReactTypes';
-import type { SuspenseInstance } from './ReactFiberHostConfig';
-import type { Lanes } from './ReactFiberLane.new';
+import type {ReactElement} from 'shared/ReactElementType';
+import type {ReactFragment, ReactPortal, ReactScope} from 'shared/ReactTypes';
+import type {SuspenseInstance} from './ReactFiberHostConfig';
+import type {Lanes} from './ReactFiberLane.new';
 import type {
-  OffscreenInstance, OffscreenProps
+  OffscreenInstance,
+  OffscreenProps,
 } from './ReactFiberOffscreenComponent';
-import type { TracingMarkerInstance } from './ReactFiberTracingMarkerComponent.new';
-import type { Fiber } from './ReactInternalTypes';
-import type { RootTag } from './ReactRootTags';
-import type { TypeOfMode } from './ReactTypeOfMode';
-import type { WorkTag } from './ReactWorkTags';
+import type {TracingMarkerInstance} from './ReactFiberTracingMarkerComponent.new';
+import type {Fiber} from './ReactInternalTypes';
+import type {RootTag} from './ReactRootTags';
+import type {TypeOfMode} from './ReactTypeOfMode';
+import type {WorkTag} from './ReactWorkTags';
 
 import {
-  allowConcurrentByDefault, enableCache, enableLegacyHidden, enableScopeAPI, enableSyncDefaultUpdates, enableTransitionTracing
+  allowConcurrentByDefault,
+  enableCache,
+  enableLegacyHidden,
+  enableScopeAPI,
+  enableSyncDefaultUpdates,
+  enableTransitionTracing,
 } from 'shared/ReactFeatureFlags';
-import { NoFlags, Placement, StaticMask } from './ReactFiberFlags';
-import { OffscreenVisible } from './ReactFiberOffscreenComponent';
-import { ConcurrentRoot } from './ReactRootTags';
+import {NoFlags, Placement, StaticMask} from './ReactFiberFlags';
+import {OffscreenVisible} from './ReactFiberOffscreenComponent';
+import {ConcurrentRoot} from './ReactRootTags';
 import {
-  CacheComponent, ClassComponent, ContextConsumer, ContextProvider, DehydratedFragment, ForwardRef,
-  Fragment, FunctionComponent, HostComponent, HostPortal, HostRoot, HostText, IndeterminateComponent, LazyComponent, LegacyHiddenComponent, MemoComponent, Mode, OffscreenComponent, ScopeComponent, SuspenseComponent,
-  SuspenseListComponent, TracingMarkerComponent
+  CacheComponent,
+  ClassComponent,
+  ContextConsumer,
+  ContextProvider,
+  DehydratedFragment,
+  ForwardRef,
+  Fragment,
+  FunctionComponent,
+  HostComponent,
+  HostPortal,
+  HostRoot,
+  HostText,
+  IndeterminateComponent,
+  LazyComponent,
+  LegacyHiddenComponent,
+  MemoComponent,
+  Mode,
+  OffscreenComponent,
+  ScopeComponent,
+  SuspenseComponent,
+  SuspenseListComponent,
+  TracingMarkerComponent,
 } from './ReactWorkTags';
 
 import {
-  REACT_CACHE_TYPE, REACT_CONTEXT_TYPE, REACT_FORWARD_REF_TYPE,
-  REACT_FRAGMENT_TYPE, REACT_LAZY_TYPE, REACT_LEGACY_HIDDEN_TYPE, REACT_MEMO_TYPE, REACT_OFFSCREEN_TYPE, REACT_PROVIDER_TYPE, REACT_SCOPE_TYPE, REACT_STRICT_MODE_TYPE, REACT_SUSPENSE_LIST_TYPE, REACT_SUSPENSE_TYPE, REACT_TRACING_MARKER_TYPE
+  REACT_CACHE_TYPE,
+  REACT_CONTEXT_TYPE,
+  REACT_FORWARD_REF_TYPE,
+  REACT_FRAGMENT_TYPE,
+  REACT_LAZY_TYPE,
+  REACT_LEGACY_HIDDEN_TYPE,
+  REACT_MEMO_TYPE,
+  REACT_OFFSCREEN_TYPE,
+  REACT_PROVIDER_TYPE,
+  REACT_SCOPE_TYPE,
+  REACT_STRICT_MODE_TYPE,
+  REACT_SUSPENSE_LIST_TYPE,
+  REACT_SUSPENSE_TYPE,
+  REACT_TRACING_MARKER_TYPE,
 } from 'shared/ReactSymbols';
-import { NoLanes } from './ReactFiberLane.new';
-import { TransitionTracingMarker } from './ReactFiberTracingMarkerComponent.new';
+import {NoLanes} from './ReactFiberLane.new';
+import {TransitionTracingMarker} from './ReactFiberTracingMarkerComponent.new';
 import {
-  ConcurrentMode, ConcurrentUpdatesByDefaultMode, NoMode, StrictLegacyMode
+  ConcurrentMode,
+  ConcurrentUpdatesByDefaultMode,
+  NoMode,
+  StrictLegacyMode,
 } from './ReactTypeOfMode';
 
-export type { Fiber };
-
-let hasBadMapPolyfill;
-
+export type {Fiber};
 
 function FiberNode(
   tag: WorkTag,
@@ -255,9 +292,9 @@ export function resetWorkInProgress(workInProgress: Fiber, renderLanes: Lanes) {
       currentDependencies === null
         ? null
         : {
-          lanes: currentDependencies.lanes,
-          firstContext: currentDependencies.firstContext,
-        };
+            lanes: currentDependencies.lanes,
+            firstContext: currentDependencies.firstContext,
+          };
   }
 
   return workInProgress;
@@ -358,7 +395,7 @@ export function createFiberFromTypeAndProps(
               break getTag;
           }
         }
-        let info = '';
+        const info = '';
 
         throw new Error(
           'Element type is invalid: expected a string (for built-in ' +
@@ -382,7 +419,7 @@ export function createFiberFromElement(
   mode: TypeOfMode,
   lanes: Lanes,
 ): Fiber {
-  let owner = null;
+  const owner = null;
   const type = element.type;
   const key = element.key;
   const pendingProps = element.props;

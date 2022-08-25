@@ -10,66 +10,95 @@
 import type {
   MutableSource,
   MutableSourceGetSnapshotFn,
-  MutableSourceSubscribeFn, StartTransitionOptions
+  MutableSourceSubscribeFn,
+  StartTransitionOptions,
 } from 'shared/ReactTypes';
-import type { Cache } from './ReactFiberCacheComponent.new';
-import type { Flags } from './ReactFiberFlags';
-import type { Lane, Lanes } from './ReactFiberLane.new';
-import type { Dispatcher, Fiber, FiberRoot } from './ReactInternalTypes';
+import type {Cache} from './ReactFiberCacheComponent.new';
+import type {Flags} from './ReactFiberFlags';
+import type {Lane, Lanes} from './ReactFiberLane.new';
+import type {Dispatcher, Fiber, FiberRoot} from './ReactInternalTypes';
 
 import {
-  enableCache, enableLazyContextPropagation, enableNewReconciler, enableTransitionTracing, enableUseMutableSource, enableUseRefAccessWarning
+  enableCache,
+  enableLazyContextPropagation,
+  enableNewReconciler,
+  enableTransitionTracing,
+  enableUseMutableSource,
+  enableUseRefAccessWarning,
 } from 'shared/ReactFeatureFlags';
 import ReactSharedInternals from 'shared/ReactSharedInternals';
 
 import {
   ContinuousEventPriority,
-  getCurrentUpdatePriority, higherEventPriority, setCurrentUpdatePriority
+  getCurrentUpdatePriority,
+  higherEventPriority,
+  setCurrentUpdatePriority,
 } from './ReactEventPriorities.new';
 import {
-  LayoutStatic as LayoutStaticEffect, Passive as PassiveEffect,
-  PassiveStatic as PassiveStaticEffect, StoreConsistency, Update as UpdateEffect
+  LayoutStatic as LayoutStaticEffect,
+  Passive as PassiveEffect,
+  PassiveStatic as PassiveStaticEffect,
+  StoreConsistency,
+  Update as UpdateEffect,
 } from './ReactFiberFlags';
 import {
-  claimNextTransitionLane, includesBlockingLane,
-  includesOnlyNonUrgentLanes, intersectLanes, isSubsetOfLanes, isTransitionLane,
+  claimNextTransitionLane,
+  includesBlockingLane,
+  includesOnlyNonUrgentLanes,
+  intersectLanes,
+  isSubsetOfLanes,
+  isTransitionLane,
   markRootEntangled,
-  markRootMutableRead, mergeLanes, NoLane, NoLanes, NoTimestamp, OffscreenLane, removeLanes, SyncLane
+  markRootMutableRead,
+  mergeLanes,
+  NoLane,
+  NoLanes,
+  NoTimestamp,
+  OffscreenLane,
+  removeLanes,
+  SyncLane,
 } from './ReactFiberLane.new';
-import { checkIfContextChanged, readContext } from './ReactFiberNewContext.new';
+import {checkIfContextChanged, readContext} from './ReactFiberNewContext.new';
 import {
   getWorkInProgressRoot,
-  getWorkInProgressRootRenderLanes, markSkippedUpdateLanes, requestEventTime, requestUpdateLane, scheduleUpdateOnFiber
+  getWorkInProgressRootRenderLanes,
+  markSkippedUpdateLanes,
+  requestEventTime,
+  requestUpdateLane,
+  scheduleUpdateOnFiber,
 } from './ReactFiberWorkLoop.new';
 import {
-  HasEffect as HookHasEffect, Insertion as HookInsertion, Layout as HookLayout,
-  Passive as HookPassive
+  HasEffect as HookHasEffect,
+  Insertion as HookInsertion,
+  Layout as HookLayout,
+  Passive as HookPassive,
 } from './ReactHookEffectTags';
-import { CacheComponent, HostRoot } from './ReactWorkTags';
+import {CacheComponent, HostRoot} from './ReactWorkTags';
 
 import is from 'shared/objectIs';
 import {
-  checkIfWorkInProgressReceivedUpdate, markWorkInProgressReceivedUpdate
+  checkIfWorkInProgressReceivedUpdate,
+  markWorkInProgressReceivedUpdate,
 } from './ReactFiberBeginWork.new';
-import { CacheContext, createCache } from './ReactFiberCacheComponent.new';
+import {CacheContext, createCache} from './ReactFiberCacheComponent.new';
 import {
   createUpdate as createLegacyQueueUpdate,
   enqueueUpdate as enqueueLegacyQueueUpdate,
-  entangleTransitions as entangleLegacyQueueTransitions
+  entangleTransitions as entangleLegacyQueueTransitions,
 } from './ReactFiberClassUpdateQueue.new';
 import {
   enqueueConcurrentHookUpdate,
   enqueueConcurrentHookUpdateAndEagerlyBailout,
-  enqueueConcurrentRenderForLane
+  enqueueConcurrentRenderForLane,
 } from './ReactFiberConcurrentUpdates.new';
-import { getIsHydrating } from './ReactFiberHydrationContext.new';
-import { getTreeId } from './ReactFiberTreeContext.new';
+import {getIsHydrating} from './ReactFiberHydrationContext.new';
+import {getTreeId} from './ReactFiberTreeContext.new';
 import {
   getWorkInProgressVersion,
   markSourceAsDirty,
-  setWorkInProgressVersion
+  setWorkInProgressVersion,
 } from './ReactMutableSource.new';
-import { now } from './Scheduler';
+import {now} from './Scheduler';
 
 const {ReactCurrentDispatcher, ReactCurrentBatchConfig} = ReactSharedInternals;
 
@@ -88,7 +117,6 @@ export type UpdateQueue<S, A> = {|
   lastRenderedReducer: ((S, A) => S) | null,
   lastRenderedState: S | null,
 |};
-
 
 export type Hook = {|
   memoizedState: any,
@@ -156,7 +184,6 @@ let localIdCounter: number = 0;
 let globalClientIdCounter: number = 0;
 
 const RE_RENDER_LIMIT = 25;
-
 
 function throwInvalidHookError() {
   throw new Error(
@@ -256,7 +283,6 @@ export function renderWithHooks<Props, SecondArg>(
   // at the beginning of the render phase and there's no re-entrance.
   ReactCurrentDispatcher.current = ContextOnlyDispatcher;
 
-
   // This check uses currentHook so that it works the same in DEV and prod bundles.
   // hookTypesDev could catch more cases (e.g. context) but only in DEV bundles.
   const didRenderTooFewHooks =
@@ -353,7 +379,6 @@ export function resetHooksAfterThrow(): void {
 
   currentHook = null;
   workInProgressHook = null;
-
 
   didScheduleRenderPhaseUpdateDuringThisPass = false;
   localIdCounter = 0;
@@ -696,7 +721,6 @@ function readFromUnsubscribedMutableSource<Source, Snapshot>(
   source: MutableSource<Source>,
   getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,
 ): Snapshot {
-
   const getVersion = source._getVersion;
   const version = getVersion(source._source);
 
@@ -1226,23 +1250,6 @@ function pushEffect(tag, create, destroy, deps) {
   return effect;
 }
 
-let stackContainsErrorMessage: boolean | null = null;
-
-function getCallerStackFrame(): string {
-  // eslint-disable-next-line react-internal/prod-error-codes
-  const stackFrames = new Error('Error message').stack.split('\n');
-
-  // Some browsers (e.g. Chrome) include the error message in the stack
-  // but others (e.g. Firefox) do not.
-  if (stackContainsErrorMessage === null) {
-    stackContainsErrorMessage = stackFrames[0].includes('Error message');
-  }
-
-  return stackContainsErrorMessage
-    ? stackFrames.slice(3, 4).join('\n')
-    : stackFrames.slice(2, 3).join('\n');
-}
-
 function mountRef<T>(initialValue: T): {|current: T|} {
   const hook = mountWorkInProgressHook();
   if (enableUseRefAccessWarning) {
@@ -1337,7 +1344,7 @@ function mountLayoutEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
 ): void {
-  let fiberFlags: Flags = UpdateEffect | LayoutStaticEffect;
+  const fiberFlags: Flags = UpdateEffect | LayoutStaticEffect;
   return mountEffectImpl(fiberFlags, HookLayout, create, deps);
 }
 
@@ -1378,7 +1385,7 @@ function mountImperativeHandle<T>(
   const effectDeps =
     deps !== null && deps !== undefined ? deps.concat([ref]) : null;
 
-  let fiberFlags: Flags = UpdateEffect | LayoutStaticEffect;
+  const fiberFlags: Flags = UpdateEffect | LayoutStaticEffect;
   return mountEffectImpl(
     fiberFlags,
     HookLayout,
@@ -1548,7 +1555,6 @@ function startTransition(setPending, callback, options) {
 
   const prevTransition = ReactCurrentBatchConfig.transition;
   ReactCurrentBatchConfig.transition = {};
-  const currentTransition = ReactCurrentBatchConfig.transition;
 
   if (enableTransitionTracing) {
     if (options !== undefined && options.name !== undefined) {
@@ -1598,7 +1604,6 @@ function rerenderTransition(): [
   const start = hook.memoizedState;
   return [isPending, start];
 }
-
 
 function mountId(): string {
   const hook = mountWorkInProgressHook();
@@ -1756,7 +1761,6 @@ function dispatchSetState<S, A>(
       // same as the current state, we may be able to bail out entirely.
       const lastRenderedReducer = queue.lastRenderedReducer;
       if (lastRenderedReducer !== null) {
-        let prevDispatcher;
         try {
           const currentState: S = (queue.lastRenderedState: any);
           const eagerState = lastRenderedReducer(currentState, action);
@@ -1788,7 +1792,6 @@ function dispatchSetState<S, A>(
       entangleTransitionUpdate(root, queue, lane);
     }
   }
-
 }
 
 function isRenderPhaseUpdate(fiber: Fiber) {
