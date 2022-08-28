@@ -820,13 +820,6 @@ function completeWork(
         }
       } else {
         if (!newProps) {
-          if (workInProgress.stateNode === null) {
-            throw new Error(
-              'We must have new props for new mounts. This error is likely ' +
-                'caused by a bug in React. Please file an issue.',
-            );
-          }
-
           // This can happen when we abort work.
           bubbleProperties(workInProgress);
           return null;
@@ -875,15 +868,6 @@ function completeWork(
         // to schedule a side-effect to do the updates.
         updateHostText(current, workInProgress, oldText, newText);
       } else {
-        if (typeof newText !== 'string') {
-          if (workInProgress.stateNode === null) {
-            throw new Error(
-              'We must have new props for new mounts. This error is likely ' +
-                'caused by a bug in React. Please file an issue.',
-            );
-          }
-          // This can happen when we abort work.
-        }
         const rootContainerInstance = getRootHostContainer();
         const currentHostContext = getHostContext();
         workInProgress.stateNode = createTextInstance(

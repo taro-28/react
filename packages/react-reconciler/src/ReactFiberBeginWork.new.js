@@ -68,14 +68,7 @@ import {
   enableTransitionTracing,
 } from 'shared/ReactFeatureFlags';
 import shallowEqual from 'shared/shallowEqual';
-import {
-  ContentReset,
-  DidCapture,
-  ForceUpdateForLegacySuspense,
-  PerformedWork,
-  Ref,
-  RefStatic,
-} from './ReactFiberFlags';
+import {ContentReset, DidCapture, Ref, RefStatic} from './ReactFiberFlags';
 
 import {is} from 'core-js/core/object';
 import {
@@ -100,8 +93,6 @@ import {
 import {
   getMaskedContext,
   getUnmaskedContext,
-  isContextProvider as isLegacyContextProvider,
-  pushContextProvider as pushLegacyContextProvider,
   pushTopLevelContextObject,
 } from './ReactFiberContext.new';
 import {
@@ -220,8 +211,6 @@ function updateForwardRef(
     return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
   }
 
-  // React DevTools reads this flag.
-  workInProgress.flags |= PerformedWork;
   reconcileChildren(current, workInProgress, nextChildren, renderLanes);
   return workInProgress.child;
 }
@@ -284,8 +273,6 @@ function updateMemoComponent(
       return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
     }
   }
-  // React DevTools reads this flag.
-  workInProgress.flags |= PerformedWork;
   const newChild = createWorkInProgress(currentChild, nextProps);
   newChild.ref = workInProgress.ref;
   newChild.return = workInProgress;
@@ -348,10 +335,6 @@ function updateSimpleMemoComponent(
           workInProgress,
           renderLanes,
         );
-      } else if ((current.flags & ForceUpdateForLegacySuspense) !== NoFlags) {
-        // This is a special case that only exists for legacy mode.
-        // See https://github.com/facebook/react/pull/19216.
-        didReceiveUpdate = true;
       }
     }
   }
@@ -745,11 +728,6 @@ function updateFunctionComponent(
   renderLanes,
 ) {
   let context;
-  if (!disableLegacyContext) {
-    const unmaskedContext = getUnmaskedContext(workInProgress, Component, true);
-    context = getMaskedContext(workInProgress, unmaskedContext);
-  }
-
   prepareToReadContext(workInProgress, renderLanes);
   const nextChildren = renderWithHooks(
     current,
@@ -765,8 +743,6 @@ function updateFunctionComponent(
     return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
   }
 
-  // React DevTools reads this flag.
-  workInProgress.flags |= PerformedWork;
   reconcileChildren(current, workInProgress, nextChildren, renderLanes);
   return workInProgress.child;
 }
@@ -789,10 +765,6 @@ function pushHostRootContext(workInProgress) {
 function updateHostRoot(current, workInProgress, renderLanes) {
   pushHostRootContext(workInProgress);
 
-  if (current === null) {
-    throw new Error('Should have a current fiber. This is a bug in React.');
-  }
-
   const nextProps = workInProgress.pendingProps;
   const prevState = workInProgress.memoizedState;
   const prevChildren = prevState.element;
@@ -807,16 +779,6 @@ function updateHostRoot(current, workInProgress, renderLanes) {
     pushRootMarkerInstance(workInProgress);
   }
 
-  if (enableCache) {
-    const nextCache: Cache = nextState.cache;
-    pushCacheProvider(workInProgress, nextCache);
-    if (nextCache !== prevState.cache) {
-      // The root cache refreshed.
-      propagateContextChange(workInProgress, CacheContext, renderLanes);
-    }
-  }
-
-  // Caution: React DevTools currently depends on this property
   // being called "element".
   const nextChildren = nextState.element;
 
@@ -948,9 +910,6 @@ function mountIndeterminateComponent(
     renderLanes,
   );
 
-  // React DevTools reads this flag.
-  workInProgress.flags |= PerformedWork;
-
   if (
     // Run these checks in production only if the flag is off.
     // Eventually we'll delete this branch altogether.
@@ -963,13 +922,6 @@ function mountIndeterminateComponent(
     // Throw out any hooks that were used.
     workInProgress.memoizedState = null;
     workInProgress.updateQueue = null;
-
-    // Push context providers early to prevent context stack mismatches.
-    // During mounting we don't know the child context yet as the instance doesn't exist.
-    // We will invalidate the child context in finishClassComponent() right after rendering.
-    if (isLegacyContextProvider(Component)) {
-      pushLegacyContextProvider(workInProgress);
-    }
 
     workInProgress.memoizedState =
       value.state !== null && value.state !== undefined ? value.state : null;
@@ -1784,8 +1736,6 @@ function updateContextConsumer(
   const newValue = readContext(context);
   const newChildren = render(newValue);
 
-  // React DevTools reads this flag.
-  workInProgress.flags |= PerformedWork;
   reconcileChildren(current, workInProgress, newChildren, renderLanes);
   return workInProgress.child;
 }
@@ -2084,17 +2034,11 @@ function beginWork(
           renderLanes,
         );
       }
-      if ((current.flags & ForceUpdateForLegacySuspense) !== NoFlags) {
-        // This is a special case that only exists for legacy mode.
-        // See https://github.com/facebook/react/pull/19216.
-        didReceiveUpdate = true;
-      } else {
-        // An update was scheduled on this fiber, but there are no new props
-        // nor legacy context. Set this to false. If an update queue or context
-        // consumer produces a changed value, it will set this to true. Otherwise,
-        // the component will assume the children have not changed and bail out.
-        didReceiveUpdate = false;
-      }
+      // An update was scheduled on this fiber, but there are no new props
+      // nor legacy context. Set this to false. If an update queue or context
+      // consumer produces a changed value, it will set this to true. Otherwise,
+      // the component will assume the children have not changed and bail out.
+      didReceiveUpdate = false;
     }
   } else {
     didReceiveUpdate = false;

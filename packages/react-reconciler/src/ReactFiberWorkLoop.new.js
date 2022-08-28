@@ -384,7 +384,6 @@ let legacyErrorBoundariesThatAlreadyFailed: Set<mixed> | null = null;
 let rootDoesHavePassiveEffects: boolean = false;
 let rootWithPendingPassiveEffects: FiberRoot | null = null;
 let pendingPassiveEffectsLanes: Lanes = NoLanes;
-const pendingPassiveEffectsRemainingLanes: Lanes = NoLanes;
 let pendingPassiveTransitions: Array<Transition> | null = null;
 
 // Use these to prevent an infinite loop of nested updates
@@ -561,18 +560,6 @@ export function scheduleUpdateOnFiber(
   }
 }
 
-export function isUnsafeClassRenderPhaseUpdate(fiber: Fiber) {
-  // Check if this is a render phase update. Only called by class components,
-  // which special (deprecated) behavior for UNSAFE_componentWillReceive props.
-  return (
-    // TODO: Remove outdated deferRenderPhaseUpdateToNextBatch experiment. We
-    // decided not to enable it.
-    (!deferRenderPhaseUpdateToNextBatch ||
-      (fiber.mode & ConcurrentMode) === NoMode) &&
-    (executionContext & RenderContext) !== NoContext
-  );
-}
-
 // Use this function to schedule a task for a root. There's only one task per
 // root; if a task was already scheduled, we'll check to make sure the priority
 // of the existing task is the same as the priority of the next level that the
@@ -690,10 +677,6 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
   currentEventTime = NoTimestamp;
   currentEventTransitionLane = NoLanes;
 
-  if ((executionContext & (RenderContext | CommitContext)) !== NoContext) {
-    throw new Error('Should not already be working.');
-  }
-
   // Flush any pending passive effects before deciding which lanes to work on,
   // in case they schedule additional work.
   const originalCallbackNode = root.callbackNode;
@@ -770,9 +753,6 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
 }
 
 function recoverFromConcurrentError(root, errorRetryLanes) {
-  // If an error occurred during hydration, discard server response and fall
-  // back to client side render.
-
   // Before rendering again, save the errors from the previous attempt.
   const errorsFromFirstAttempt = workInProgressRootConcurrentErrors;
 
@@ -1647,25 +1627,11 @@ function commitRootImpl(
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
 
-  if ((executionContext & (RenderContext | CommitContext)) !== NoContext) {
-    throw new Error('Should not already be working.');
-  }
-
   const finishedWork = root.finishedWork;
   const lanes = root.finishedLanes;
 
-  if (finishedWork === null) {
-    return null;
-  }
   root.finishedWork = null;
   root.finishedLanes = NoLanes;
-
-  if (finishedWork === root.current) {
-    throw new Error(
-      'Cannot commit the same tree as before. This error is likely caused by ' +
-        'a bug in React. Please file an issue.',
-    );
-  }
 
   // commitRoot never returns a continuation; it always finishes synchronously.
   // So we can clear these now to allow a new callback to be scheduled.
@@ -2127,15 +2093,6 @@ function retryTimedOutBoundary(boundaryFiber: Fiber, retryLane: Lane) {
     markRootUpdated(root, retryLane, eventTime);
     ensureRootIsScheduled(root, eventTime);
   }
-}
-
-export function retryDehydratedSuspenseBoundary(boundaryFiber: Fiber) {
-  const suspenseState: null | SuspenseState = boundaryFiber.memoizedState;
-  let retryLane = NoLane;
-  if (suspenseState !== null) {
-    retryLane = suspenseState.retryLane;
-  }
-  retryTimedOutBoundary(boundaryFiber, retryLane);
 }
 
 export function resolveRetryWakeable(boundaryFiber: Fiber, wakeable: Wakeable) {

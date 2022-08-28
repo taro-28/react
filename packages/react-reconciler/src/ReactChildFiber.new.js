@@ -1242,12 +1242,6 @@ function ChildReconciler(shouldTrackSideEffects) {
       );
     }
 
-    if (__DEV__) {
-      if (typeof newChild === 'function') {
-        warnOnFunctionType(returnFiber);
-      }
-    }
-
     // Remaining cases are all treated as empty.
     return deleteRemainingChildren(returnFiber, currentFirstChild);
   }

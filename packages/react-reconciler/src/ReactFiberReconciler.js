@@ -42,7 +42,6 @@ import {
   runWithPriority as runWithPriority_old,
   shouldError as shouldError_old,
   shouldSuspend as shouldSuspend_old,
-  updateContainer as updateContainer_old,
 } from './ReactFiberReconciler.old';
 
 import {
@@ -79,9 +78,7 @@ import {
 export const createContainer = enableNewReconciler
   ? createContainer_new
   : createContainer_old;
-export const updateContainer = enableNewReconciler
-  ? updateContainer_new
-  : updateContainer_old;
+export const updateContainer = updateContainer_new;
 export const batchedUpdates = enableNewReconciler
   ? batchedUpdates_new
   : batchedUpdates_old;

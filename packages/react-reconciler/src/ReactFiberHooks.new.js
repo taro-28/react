@@ -253,19 +253,9 @@ export function renderWithHooks<Props, SecondArg>(
   if (didScheduleRenderPhaseUpdateDuringThisPass) {
     // Keep rendering in a loop for as long as render phase updates continue to
     // be scheduled. Use a counter to prevent infinite loops.
-    let numberOfReRenders: number = 0;
     do {
       didScheduleRenderPhaseUpdateDuringThisPass = false;
       localIdCounter = 0;
-
-      if (numberOfReRenders >= RE_RENDER_LIMIT) {
-        throw new Error(
-          'Too many re-renders. React limits the number of renders to prevent ' +
-            'an infinite loop.',
-        );
-      }
-
-      numberOfReRenders += 1;
 
       // Start over from the beginning of the list
       currentHook = null;
@@ -1973,8 +1963,3 @@ const HooksDispatcherOnRerender: Dispatcher = {
 
   unstable_isNewReconciler: enableNewReconciler,
 };
-if (enableCache) {
-  (HooksDispatcherOnRerender: Dispatcher).getCacheSignal = getCacheSignal;
-  (HooksDispatcherOnRerender: Dispatcher).getCacheForType = getCacheForType;
-  (HooksDispatcherOnRerender: Dispatcher).useCacheRefresh = updateRefresh;
-}
